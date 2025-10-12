@@ -239,7 +239,7 @@ def derive_groups(
     Returns:
         Dict[EntityID, str | None]: Mapping of entity id to chosen group id (or ``None`` if ungrouped).
     """
-    rule_groups: dict[str,set[str]] = defaultdict(set)
+    rule_groups: dict[str, set[str]] = defaultdict(set)
     out: Dict[EntityID, Optional[str]] = {}
     for eid, _ in state.position.items():
         group: Optional[str] = None
