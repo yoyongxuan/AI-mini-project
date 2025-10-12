@@ -159,9 +159,10 @@ for a in [Action.RIGHT, Action.PICK_UP, Action.DOWN, Action.DOWN]:
 
 ```python
 from grid_universe.gym_env import GridUniverseEnv
+from grid_universe.examples.maze import generate as maze_generate
 import numpy as np
 
-env = GridUniverseEnv(render_mode="texture", width=7, height=7, seed=7)
+env = GridUniverseEnv(initial_state_fn=maze_generate, render_mode="texture", width=7, height=7, seed=7)
 obs, info = env.reset()
 done = False
 while not done:
@@ -274,8 +275,9 @@ Minimal random episode:
 ```python
 import numpy as np
 from grid_universe.gym_env import GridUniverseEnv
+from grid_universe.examples.maze import generate as maze_generate
 
-env = GridUniverseEnv(width=8, height=8, seed=123, render_mode="texture")
+env = GridUniverseEnv(initial_state_fn=maze_generate, width=8, height=8, seed=123, render_mode="texture")
 obs, info = env.reset()
 done = False
 total = 0

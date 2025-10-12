@@ -134,12 +134,14 @@ Gymnasium wrapper returns an observation dict with an image and structured info.
 ```python
 import numpy as np
 from grid_universe.gym_env import GridUniverseEnv
+from grid_universe.examples.maze import generate as maze_generate
 
-# Initialize
+# Initialize (initial_state_fn is required)
 env = GridUniverseEnv(
+    initial_state_fn=maze_generate,
     render_mode="texture",
     width=7, height=7,
-    seed=42,                 # forwarded to the generator
+    seed=42,  # forwarded to the generator
 )
 
 # Reset

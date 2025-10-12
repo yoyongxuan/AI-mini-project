@@ -7,6 +7,7 @@ import streamlit as st
 
 from grid_universe.gym_env import GridUniverseEnv
 from grid_universe.examples.maze import (
+    generate,
     DEFAULT_BOXES,
     DEFAULT_ENEMIES,
     DEFAULT_HAZARDS,
@@ -405,7 +406,11 @@ def build_maze_config(current: object) -> MazeConfig:
 
 
 def _make_env(cfg: MazeConfig) -> GridUniverseEnv:
-    return GridUniverseEnv(render_mode="texture", **dataclasses.asdict(cfg))
+    return GridUniverseEnv(
+        render_mode="texture",
+        initial_state_fn=generate,
+        **dataclasses.asdict(cfg),
+    )
 
 
 register_level_source(

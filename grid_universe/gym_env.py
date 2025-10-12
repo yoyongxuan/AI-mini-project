@@ -26,7 +26,12 @@ Level  # if observation_type="level"
 
 Usage:
 
-``env = GridUniverseEnv(width=9, height=9, move_fn_name="default")``
+``
+from grid_universe.gym_env import GridUniverseEnv
+from grid_universe.examples.maze import generate as maze_generate
+
+env = GridUniverseEnv(initial_state_fn=maze_generate, width=9, height=9, seed=123)
+``
 
 Customization hooks:
     * ``initial_state_fn``: Provide a callable that returns a fully built ``State``.
@@ -52,7 +57,6 @@ from grid_universe.levels.grid import (
     Level,
 )
 from grid_universe.actions import Action as BaseAction
-from grid_universe.examples.maze import generate
 from grid_universe.renderer.texture import (
     DEFAULT_ASSET_ROOT,
     DEFAULT_RESOLUTION,
@@ -326,11 +330,11 @@ class GridUniverseEnv(gym.Env[Union[Observation, Level], np.integer]):
 
     def __init__(
         self,
+        initial_state_fn: Callable[..., State],
         render_mode: str = "texture",
         render_resolution: int = DEFAULT_RESOLUTION,
         render_texture_map: TextureMap = DEFAULT_TEXTURE_MAP,
         render_asset_root: str = DEFAULT_ASSET_ROOT,
-        initial_state_fn: Callable[..., State] = generate,
         observation_type: str = "image",
         **kwargs: Any,
     ):

@@ -246,8 +246,9 @@ The Gymnasium wrapper provides obs dicts with an image and structured info.
 ```python
 import numpy as np
 from grid_universe.gym_env import GridUniverseEnv
+from grid_universe.examples.maze import generate as maze_generate
 
-env = GridUniverseEnv(render_mode="texture", width=9, height=9, seed=7)
+env = GridUniverseEnv(initial_state_fn=maze_generate, render_mode="texture", width=9, height=9, seed=7)
 obs, info = env.reset()
 print(obs["image"].shape, obs["info"]["status"])
 

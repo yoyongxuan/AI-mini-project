@@ -50,15 +50,16 @@ Contents
 
 ```python
 from grid_universe.gym_env import GridUniverseEnv
+from grid_universe.examples.maze import generate as maze_generate
 
 env = GridUniverseEnv(
-    render_mode="texture",        # "texture" returns PIL.Image in render(); "human" shows a window
-    render_resolution=640,        # width in pixels (height derived from grid aspect)
-    render_texture_map=None,      # use default texture map unless overridden
-    initial_state_fn=None,        # default is examples.maze.generate
+    render_mode="texture",           # "texture" returns PIL.Image in render(); "human" shows a window
+    render_resolution=640,           # width in pixels (height derived from grid aspect)
+    render_texture_map=None,         # use default texture map unless overridden
+    initial_state_fn=maze_generate,  # required: a callable returning a State
     width=9,
     height=9,
-    seed=123,                     # forwarded to the generator
+    seed=123,                        # forwarded to the generator
     # You can pass any kwargs accepted by the initial_state_fn (maze.generate by default)
     num_required_items=1,
     num_rewardable_items=1,
@@ -202,8 +203,9 @@ Minimal loop:
 ```python
 import numpy as np
 from grid_universe.gym_env import GridUniverseEnv
+from grid_universe.examples.maze import generate as maze_generate
 
-env = GridUniverseEnv(render_mode="texture", width=7, height=7, seed=1)
+env = GridUniverseEnv(initial_state_fn=maze_generate, render_mode="texture", width=7, height=7, seed=1)
 obs, info = env.reset()
 
 done = False
@@ -390,8 +392,9 @@ Basic random policy loop:
 import numpy as np
 import gymnasium as gym
 from grid_universe.gym_env import GridUniverseEnv
+from grid_universe.examples.maze import generate as maze_generate
 
-env = GridUniverseEnv(render_mode="texture", width=7, height=7, seed=3)
+env = GridUniverseEnv(initial_state_fn=maze_generate, render_mode="texture", width=7, height=7, seed=3)
 obs, info = env.reset()
 done = False
 
@@ -412,6 +415,7 @@ import gymnasium as gym
 import numpy as np
 from stable_baselines3 import PPO
 from grid_universe.gym_env import GridUniverseEnv
+from grid_universe.examples.maze import generate as maze_generate
 
 class ImageOnlyWrapper(gym.ObservationWrapper):
     def __init__(self, env):
@@ -422,7 +426,7 @@ class ImageOnlyWrapper(gym.ObservationWrapper):
         return observation["image"]
 
 def make_env():
-    base = GridUniverseEnv(render_mode="texture", width=9, height=9, seed=7)
+    base = GridUniverseEnv(initial_state_fn=maze_generate, render_mode="texture", width=9, height=9, seed=7)
     return ImageOnlyWrapper(base)
 
 env = make_env()
