@@ -589,11 +589,7 @@ def build_level_capstone(seed: int = 113) -> State:
             moving_speed=1,
         ),
     )
-    level.add((3, 6), create_floor(cost_amount=TILE_COST))
     level.add((3, 6), create_wall())
-    level.add((4, 6), create_floor(cost_amount=TILE_COST))
-    level.add((5, 6), create_floor(cost_amount=TILE_COST))
-    level.add((6, 6), create_floor(cost_amount=TILE_COST))
     level.add((6, 6), create_exit())
 
     return to_state(level)
