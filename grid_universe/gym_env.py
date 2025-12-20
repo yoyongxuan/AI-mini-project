@@ -3,8 +3,7 @@
 Provides a structured observation that pairs a rendered RGBA image with rich
 info dictionaries (agent status / inventory / active effects, environment
 config). Reward is the delta of ``state.score`` per step. ``terminated`` is
-``True`` on win, ``truncated`` on lose (mirrors many Gym environments that
-differentiate *natural* vs *forced* episode ends).
+``True`` on win, ``truncated`` on lose.
 
 Observation schema (see docs for full details):
 

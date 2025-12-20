@@ -1,30 +1,3 @@
-"""Core immutable ECS `State` dataclass.
-
-This module defines the frozen :class:`State` object that represents the
-entire game / simulation snapshot at a single turn. All systems are pure
-functions that take a previous ``State`` plus inputs (e.g. an ``Action``) and
-return a *new* ``State``; no mutation happens in-place. This makes the engine
-deterministic, easy to test, and friendly to functional style reducers.
-
-Design notes:
-
-* Component stores are **persistent maps** (``pyrsistent.PMap``) keyed by
-    ``EntityID``. Absence of a key means the entity does not currently possess
-    that component.
-* Effect components (Immunity, Phasing, Speed, TimeLimit, UsageLimit) are
-    referenced by :class:`grid_universe.components.properties.Status` which
-    holds ordered ``effect_ids``. Several systems (status tick, GC) walk those
-    references.
-* The ``prev_position`` and ``trail`` auxiliary stores are populated by
-    dedicated systems to enable path‑based effects (e.g. trail rendering or
-    damage-on-cross mechanics).
-* ``win`` / ``lose`` flags are mutually exclusive terminal markers. The
-    reducer short‑circuits on terminal states.
-
-Google‑style docstrings throughout the codebase refer back to this structure;
-see :mod:`grid_universe.step` for how the reducer orchestrates systems.
-"""
-
 from dataclasses import dataclass
 from typing import Any, Optional
 from pyrsistent import PMap, PSet, pmap, pset
@@ -67,52 +40,49 @@ from grid_universe.types import EntityID, MoveFn, ObjectiveFn
 class State:
     """Immutable ECS world state.
 
-    Instances are *value objects*; every transition creates a new ``State``.
-    Only include persistent / serializable data here (no open handles or
-    caches). Systems should be pure functions that accept and return ``State``.
-
     Attributes:
         width (int): Grid width in tiles.
         height (int): Grid height in tiles.
-        move_fn (MoveFn): Movement candidate function used to resolve move actions.
-        objective_fn (ObjectiveFn): Predicate evaluated after each step to set ``win``.
+        move_fn (MoveFn): Movement function determining entity step paths.
+        objective_fn (ObjectiveFn): Objective function determining win condition.
         immunity (PMap[EntityID, Immunity]): Effect component map.
         phasing (PMap[EntityID, Phasing]): Effect component map.
         speed (PMap[EntityID, Speed]): Effect component map.
         time_limit (PMap[EntityID, TimeLimit]): Effect limiter map (remaining steps).
         usage_limit (PMap[EntityID, UsageLimit]): Effect limiter map (remaining uses).
-        agent (PMap[EntityID, Agent]): Player / AI controllable entity marker components.
-        appearance (PMap[EntityID, Appearance]): Rendering metadata (glyph, layering, groups).
-        blocking (PMap[EntityID, Blocking]): Entities that prevent movement into their tile.
-        collectible (PMap[EntityID, Collectible]): Items that can be picked up.
+        agent (PMap[EntityID, Agent]): Agent component map.
+        appearance (PMap[EntityID, Appearance]): Visual appearance component map.
+        blocking (PMap[EntityID, Blocking]): Obstacles that block movement.
+        collectible (PMap[EntityID, Collectible]): Entities that can be collected.
         collidable (PMap[EntityID, Collidable]): Entities that can collide (triggering damage, cost, etc.).
-        cost (PMap[EntityID, Cost]): Movement or interaction cost applied when entered.
-        damage (PMap[EntityID, Damage]): Passive damage applied on collision / contact.
-        dead (PMap[EntityID, Dead]): Marker for logically removed entities (awaiting GC).
-        exit (PMap[EntityID, Exit]): Tiles that can satisfy the objective when conditions met.
-        health (PMap[EntityID, Health]): Health pools for damage / lethal checks.
-        inventory (PMap[EntityID, Inventory]): Item/key collections carried by entities.
+        cost (PMap[EntityID, Cost]): Entities that inflict movement cost.
+        damage (PMap[EntityID, Damage]): Entities that inflict damage on contact.
+        dead (PMap[EntityID, Dead]): Entities that are dead/incapacitated.
+        exit (PMap[EntityID, Exit]): Exit tiles/components.
+        health (PMap[EntityID, Health]): Entity health component map.
+        inventory (PMap[EntityID, Inventory]): Agent inventory component map.
         key (PMap[EntityID, Key]): Keys that can unlock ``Locked`` components.
-        lethal_damage (PMap[EntityID, LethalDamage]): Immediate kill damage sources (pits, hazards).
-        locked (PMap[EntityID, Locked]): Lock descriptors requiring matching keys.
-        moving (PMap[EntityID, Moving]): Entities currently undergoing movement (inter-step state).
-        pathfinding (PMap[EntityID, Pathfinding]): Agents with pathfinding goals and cached paths.
-        portal (PMap[EntityID, Portal]): Teleport endpoints / pairs.
-        position (PMap[EntityID, Position]): Current grid position of entities.
-        pushable (PMap[EntityID, Pushable]): Entities that can be displaced by push actions.
-        required (PMap[EntityID, Required]): Items/conditions needed to satisfy collect and default objectives.
-        rewardable (PMap[EntityID, Rewardable]): Components conferring score rewards when collected or triggered.
-        status (PMap[EntityID, Status]): Ordered list container referencing effect component ids.
-        prev_position (PMap[EntityID, Position]): Snapshot of positions before movement this step.
-        trail (PMap[Position, PSet[EntityID]]): Positions traversed this step mapped to entity ids.
-        turn (int): Turn counter (0-based).
-        score (int): Accumulated score.
+        lethal_damage (PMap[EntityID, LethalDamage]): Entities that inflict instant death on contact.
+        locked (PMap[EntityID, Locked]): Locked entities (doors, etc.).
+        moving (PMap[EntityID, Moving]): Entities with autonomous movement behavior.
+        pathfinding (PMap[EntityID, Pathfinding]): Entities with pathfinding behavior.
+        portal (PMap[EntityID, Portal]): Teleportation portal components.
+        position (PMap[EntityID, Position]): Entity position component map.
+        pushable (PMap[EntityID, Pushable]): Entities that can be pushed.
+        required (PMap[EntityID, Required]): Entities that must be collected to win if objective requires it.
+        rewardable (PMap[EntityID, Rewardable]): Entities that grant rewards when collected.
+        status (PMap[EntityID, Status]): Entity status effect component map.
+        prev_position (PMap[EntityID, Position]): Snapshot of positions before movement this step (used by system).
+        trail (PMap[Position, PSet[EntityID]]): Mapping of positions to entities that have occupied them (for trail effects).
+        damage_hits (PSet[tuple[EntityID, EntityID, int]]): Set of damage events this turn (attacker, target, amount).
+        turn (int): Current turn number.
+        score (int): Cumulative score.
         turn_limit (int | None): Optional maximum number of turns allowed. When
             set, reaching this number triggers a ``lose`` state unless already
             ``win``. ``None`` disables the limit.
         win (bool): True if objective met.
         lose (bool): True if losing condition met.
-        message (str | None): Optional informational / terminal message.
+        message (str | None): Optional status message for display.
         seed (int | None): Base RNG seed for deterministic rendering or procedural systems.
     """
 
@@ -170,16 +140,12 @@ class State:
 
     @property
     def description(self) -> PMap[str, Any]:
-        """Sparse serialization of non‑empty fields.
-
-        Iterates dataclass fields and returns a persistent map including only
-        those that are non‑empty (for component maps) or truthy (for scalars).
-        Useful for lightweight diagnostics / debugging without dumping large
-        empty maps.
+        """
+        Generates a persistent map describing the state's attributes.
+        This includes all fields except for empty persistent maps.
 
         Returns:
-            PMap[str, Any]: Persistent map of field name to value for all
-            populated fields.
+            PMap[str, Any]: Persistent map of state attributes and their values.
         """
         description: PMap[str, Any] = pmap()
         for field in self.__dataclass_fields__:

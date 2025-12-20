@@ -1,10 +1,13 @@
-"""Damage component (non-lethal)."""
-
 from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
 class Damage:
-    """Hit point damage applied on contact / crossing."""
+    """
+    Marker component for damaging entities.
+
+    Attributes:
+        amount: Positive integer damage amount.
+    """
 
     amount: int

@@ -1,8 +1,9 @@
-"""Trail aggregation helpers.
+"""
+Trail (historic position) utilities.
 
-Produces augmented trail maps merging current positions of specific entities
-with previously recorded traversed positions. Used by portal and potential
-AoE/effect systems to reason about *paths taken* rather than only endpoints.
+Provides functions to manage and query the historic trails of entities
+within the grid universe, allowing systems to track prior positions for
+purposes such as implementing trail-based mechanics.
 """
 
 from collections import defaultdict

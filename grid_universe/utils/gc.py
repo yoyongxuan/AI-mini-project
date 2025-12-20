@@ -1,14 +1,10 @@
-"""Garbage collection utilities.
+"""
+Garbage collection utilities.
 
-Removes unreachable entity/component entries from state maps. *Reachable*
-entities include:
-* All IDs in the master ``entity`` map.
-* Effect entity IDs referenced by any ``Status`` component.
-* Item IDs referenced by any ``Inventory`` component.
+Removes unreachable entities from the state.
 
-The garbage collector prunes orphaned component entries (e.g., an effect map
-entry for an effect whose owning status no longer references it) which keeps
-state size bounded and avoids leaking stale objects during long simulations.
+An entity is considered reachable if it is present in the position map,
+or referenced by status effects or inventories of other reachable entities.
 """
 
 from dataclasses import replace
@@ -20,7 +16,7 @@ from pyrsistent.typing import PMap
 
 
 def compute_alive_entities(state: State) -> Set[EntityID]:
-    """Return the closure of entity IDs reachable from registries & references."""
+    """Compute the set of all reachable entity IDs in the state."""
     alive: Set[EntityID] = set(state.position.keys())
     for stats in state.status.values():
         alive |= set(stats.effect_ids)
@@ -30,7 +26,7 @@ def compute_alive_entities(state: State) -> Set[EntityID]:
 
 
 def run_garbage_collector(state: State) -> State:
-    """Prune component maps to only contain reachable entity IDs."""
+    """Return a new state with unreachable entities removed."""
     alive = compute_alive_entities(state)
     new_fields: Dict[str, Any] = {}
     for field in state.__dataclass_fields__:

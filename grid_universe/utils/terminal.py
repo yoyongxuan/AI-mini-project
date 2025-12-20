@@ -1,4 +1,9 @@
-"""Terminal condition helper predicates."""
+"""
+Terminal state utilities.
+
+Provides helper functions to determine if the current state is terminal
+(win/loss) or valid (agent exists and has a position).
+"""
 
 from grid_universe.state import State
 from grid_universe.types import EntityID

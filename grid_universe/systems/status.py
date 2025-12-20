@@ -1,15 +1,9 @@
-"""Status effect lifecycle system.
+"""
+Status effect management system.
 
-Coordinates ticking and garbage collection of effect entities referenced by a
-``Status`` component. Supports two limiter decorators:
-
-* ``TimeLimit``: decremented each step.
-* ``UsageLimit``: decremented by specific systems upon use (outside this file).
-
-The system performs two phases:
-1. Tick: Decrement all time limits for active effects.
-2. GC: Remove orphaned or expired effect IDs, pruning both the owning entity's
-    status set and the global entity map.
+This system manages the lifecycle of status effects applied to entities,
+including ticking down time limits, checking usage limits, and garbage collecting
+expired or orphaned effects.
 """
 
 from dataclasses import replace

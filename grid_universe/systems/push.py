@@ -1,9 +1,8 @@
 """Push interaction system.
 
-Enables entities (typically agents) to push adjacent entities marked with the
-``Pushable`` component into the next cell along the interaction vector,
-provided the destination cell is free of blocking/collidable constraints.
-Supports multi-entity stacks at the source tile by moving all pushables.
+Entities that attempt to move into a tile occupied by a pushable entity
+will attempt to push that entity one tile further in the same direction,
+provided the destination tile is unblocked.
 """
 
 from dataclasses import replace
@@ -22,9 +21,10 @@ def compute_destination(
 ) -> Optional[Position]:
     """Compute push destination given current and occupant next positions.
 
-    Returns the square beyond ``next_pos`` in the movement direction, applying
-    wrap logic if the state's move function is the wrapping one. ``None`` if
-    outside bounds and not wrapping.
+    Args:
+        state (State): Current immutable state.
+        current_pos (Position): Position of the entity initiating the push.
+        next_pos (Position): Position of the entity being pushed.
     """
     dx = next_pos.x - current_pos.x
     dy = next_pos.y - current_pos.y
@@ -42,7 +42,7 @@ def compute_destination(
 
 
 def push_system(state: State, eid: EntityID, next_pos: Position) -> State:
-    """Attempt to push any pushable entities at ``next_pos``.
+    """Attempt to push all pushable entities at ``next_pos``.
 
     Args:
         state (State): Current immutable state.
@@ -61,7 +61,6 @@ def push_system(state: State, eid: EntityID, next_pos: Position) -> State:
     if not pushable_ids:
         return state  # Nothing to push
 
-    pushable_id = pushable_ids[0]
     push_to = compute_destination(state, current_pos, next_pos)
     if push_to is None:
         return state

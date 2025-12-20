@@ -1,19 +1,23 @@
-"""Damage / lethal damage resolution system.
+"""
+Damage and lethal interaction system.
 
-Rules (inclusion predicates):
-    * Overlap: target_curr == damager_curr
-    * Swap: target_prev == damager_curr AND target_curr == damager_prev
-    * Trail intersection: (target_trail & damager_trail) != ∅
-    * Endpoint cross: target_curr == damager_prev AND (target_prev ∈ damager_trail OR damager_prev ∈ target_trail)
+Resolves damage and lethal damage interactions between entities based on
+their positions and movement trails, applying health reductions and death
+status updates as appropriate.
 
-Exclusion (takes precedence):
-    * Pure vacated origin: target steps onto damager_prev without swap and *no* path intersection
-        (no trail overlap, target_prev not in damager_trail, and damager_prev/current not in target_trail)
+Damage is applied if either of the following conditions are met between a
+target entity and a damager entity during the current turn:
+- There is an overlap between the target and damager positions.
+- There is a swap of positions between the target and damager.
+- Their trails intersect.
+- The target crosses into the damager's previous position (based on their movement trails).
 
-Additionally:
-    * A damager may harm a specific target at most once per turn (tracked via ``damage_hits``).
-    * Self‑damage is ignored.
-    * Trail lookups are cached.
+Damage is NOT applied if:
+- The target steps onto the damager's just vacated origin tile without
+  any other interaction evidence (no overlap, no swap, no trail intersections).
+
+Damage is only applied once per (target, damager) pair per turn, and
+status effects such as immunity or phasing can prevent damage application.
 """
 
 from dataclasses import replace

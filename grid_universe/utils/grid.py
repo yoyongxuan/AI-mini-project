@@ -1,7 +1,11 @@
-"""Grid math / collision helpers.
+"""
+Grid utilities.
 
-Utility predicates used by movement & push systems. Functions here are pure
-and intentionally lightweight to keep inner loops fast.
+Provides common functions for grid-based operations, such as boundary checks
+and collision detection.
+
+Functions here are used by movement and pathfinding systems to validate
+entity positions and movements within the grid world.
 """
 
 from typing import Set

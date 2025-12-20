@@ -12,18 +12,16 @@ class PathfindingType(StrEnum):
 
 @dataclass(frozen=True)
 class Pathfinding:
-    """AI movement directive for automated entities.
-
-    Specifies how an entity should compute movement objectives each step.
+    """
+    Pathfinding property component.
 
     Attributes:
         target:
-            Optional entity ID to follow/approach. If ``None`` and ``type`` is
-            ``PATH`` the system may skip pathfinding or use a default goal.
+            Optional EntityID of the target entity to path toward. If None, there is no
+            active target.
         type:
-            Strategy: ``PATH`` requests full pathfinding (e.g., A*), whereas
-            ``STRAIGHT_LINE`` attempts direct movement along axis-aligned shortest
-            displacement without obstacle search.
+            Strategy: ``PATH`` for A* pathfinding, ``STRAIGHT_LINE`` for direct movement
+            toward the target.
     """
 
     target: Optional[EntityID] = None

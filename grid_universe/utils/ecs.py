@@ -1,11 +1,10 @@
 """ECS convenience queries.
 
-Helper functions for querying entity/component relationships without
-introducing iteration logic into systems. All functions are pure and operate
-on the immutable :class:`grid_universe.state.State` snapshot.
+Provides cached queries for common ECS patterns, such as retrieving
+entities at a given position or with certain components.
 
-Performance: ``entities_at`` uses a cached reverse index of the immutable
-``State.position`` PMap to provide O(1) lookups per state snapshot.
+Functions here leverage caching to optimize repeated queries within
+a single state instance.
 """
 
 from functools import lru_cache
@@ -22,9 +21,10 @@ def _position_index(
 ) -> Mapping[Position, FrozenSet[EntityID]]:
     """Build a reverse index from position to entity IDs.
 
-    The argument is a persistent/immutable PMap, which is hashable and thus
-    safe to use with ``lru_cache``. Any new ``State`` (or updated position
-    store) produces a distinct key, ensuring correctness across turns.
+    Args:
+        position_store (Mapping[EntityID, Position]): Mapping of entity IDs to positions.
+    Returns:
+        Mapping[Position, FrozenSet[EntityID]]: Mapping from positions to sets of entity IDs.
     """
     index: Dict[Position, Set[EntityID]] = {}
     for eid, pos in position_store.items():
@@ -34,7 +34,7 @@ def _position_index(
 
 
 def entities_at(state: State, pos: Position) -> Set[EntityID]:
-    """Return entity IDs whose position equals ``pos``."""
+    """Return entity IDs at the given position."""
     idx = _position_index(state.position)
     return set(idx.get(pos, ()))
 
@@ -42,7 +42,7 @@ def entities_at(state: State, pos: Position) -> Set[EntityID]:
 def entities_with_components_at(
     state: State, pos: Position, *component_stores: Mapping[EntityID, object]
 ) -> List[EntityID]:
-    """Return IDs at ``pos`` possessing all provided component stores."""
+    """Return entity IDs at ``pos`` that have all specified components."""
     ids_at_pos: Set[EntityID] = entities_at(state, pos)
     for store in component_stores:
         ids_at_pos &= set(store.keys())

@@ -1,8 +1,8 @@
 """Pathfinding systems.
 
-Provides straight-line heuristic movement and A* shortest path selection for
-entities with the ``Pathfinding`` component. Supports effect-based blocking
-via usage-limited phasing/immunity status checks before movement.
+Provides pathfinding logic for entities with the Pathfinding property.
+Entities can use either A* pathfinding or a simple straight-line approach
+to move toward their targets.
 """
 
 from dataclasses import replace
@@ -29,10 +29,14 @@ from itertools import count
 def get_astar_next_position(
     state: State, entity_id: EntityID, target_id: EntityID
 ) -> Position:
-    """Compute next step toward target using A* (Manhattan metric).
+    """Compute next step toward target using A* with Manhattan distance heuristic.
 
-    Ignores collidable/pushable differences and treats only blocking tiles as
-    obstacles. Returns current position if already at goal or no path.
+    Args:
+        state (State): Current world state.
+        entity_id (EntityID): ID of the entity to move.
+        target_id (EntityID): ID of the target entity.
+    Returns:
+        Position: Next position toward the target, or current position if no path found.
     """
     start = state.position[entity_id]
     goal = state.position[target_id]
@@ -98,7 +102,15 @@ def get_astar_next_position(
 def get_straight_line_next_position(
     state: State, entity_id: EntityID, target_id: EntityID
 ) -> Position:
-    """Choose axis-aligned step maximizing dot product toward target."""
+    """Compute next step toward target using straight-line heuristic.
+
+    Args:
+        state (State): Current world state.
+        entity_id (EntityID): ID of the entity to move.
+        target_id (EntityID): ID of the target entity.
+    Returns:
+        Position: Next position toward the target.
+    """
     target_vec = position_to_vector(state.position[target_id])
     entity_vec = position_to_vector(state.position[entity_id])
     dvec = vector_subtract(target_vec, entity_vec)

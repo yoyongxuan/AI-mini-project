@@ -1,9 +1,7 @@
-"""Terminal condition systems.
+"""
+Terminal state management systems.
 
-Defines win/lose evaluation utilities that set ``state.win`` or ``state.lose``
-flags exactly once when conditions are met (objective success or agent death).
-These flags are side-channel indicators—other systems may short-circuit when
-the state is already terminal.
+Handles win/lose conditions based on objective functions, agent death, and turn limits.
 """
 
 from dataclasses import replace
@@ -13,9 +11,14 @@ from grid_universe.utils.terminal import is_terminal_state, is_valid_state
 
 
 def win_system(state: State, agent_id: EntityID) -> State:
-    """Set ``win`` flag if objective function returns True for agent.
+    """
+    Set ``win`` flag if agent meets objective function (idempotent).
 
-    Skips evaluation if state already terminal or agent invalid/dead.
+    Args:
+        state (State): Current immutable state.
+        agent_id (EntityID): ID of the agent to check for win condition.
+    Returns:
+        State: Updated state with ``win`` flag set if objective met.
     """
     if not is_valid_state(state, agent_id) or is_terminal_state(state, agent_id):
         return state
@@ -26,14 +29,28 @@ def win_system(state: State, agent_id: EntityID) -> State:
 
 
 def lose_system(state: State, agent_id: EntityID) -> State:
-    """Set ``lose`` flag if agent is dead (idempotent)."""
+    """
+    Set ``lose`` flag if agent is dead (idempotent).
+    Args:
+        state (State): Current immutable state.
+        agent_id (EntityID): ID of the agent to check for lose condition.
+    Returns:
+        State: Updated state with ``lose`` flag set if agent is dead.
+    """
     if agent_id in state.dead and not state.lose:
         return replace(state, lose=True)
     return state
 
 
 def turn_system(state: State, agent_id: EntityID) -> State:
-    """Set ``lose`` flag if turn limit is reached."""
+    """
+    Set ``lose`` flag if turn limit is reached.
+    Args:
+        state (State): Current immutable state.
+        agent_id (EntityID): ID of the agent to check for turn limit.
+    Returns:
+        State: Updated state with ``lose`` flag set if turn limit reached.
+    """
     state = replace(state, turn=state.turn + 1)
     if (
         state.turn_limit is not None

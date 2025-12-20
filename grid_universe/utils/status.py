@@ -1,9 +1,9 @@
-"""Status effect utility helpers.
+"""
+Status effect utilities.
 
-Pure helpers for querying, selecting and consuming effects referenced by a
-``Status`` component. Separation from the system module keeps logic reusable
-across movement/pathfinding or interaction systems that need to consult or
-exhaust limited effects (e.g., usage-limited phasing).
+Provides helper functions for managing status effects on entities,
+including adding/removing effects, checking for effect presence, and
+consuming effect usages.
 """
 
 from dataclasses import replace

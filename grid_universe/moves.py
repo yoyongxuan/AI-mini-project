@@ -1,21 +1,16 @@
-"""Built-in movement generator functions.
+"""Movement functions for entity navigation within the grid universe.
 
-Each *move function* maps (state, entity id, action) -> sequence of
-``Position`` objects representing the path the entity will attempt for a single
-directional action. Systems consume these candidate positions in order,
-stopping early if blocked. This indirection allows custom movement behaviors
-to be plugged per level (e.g. wrapping, sliding, wind drift).
+Each movement function defines how an entity moves in response to an action.
+They take the current ``State``, the entity ID, and the intended ``Action``,
+and return a sequence of ``Position`` instances representing the path taken.
+Different movement functions can simulate various terrain types or movement
+mechanics (e.g., slippery surfaces, wind effects, gravity).
 
-Contract (``MoveFn``):
+The default movement function is a single-step cardinal move in the intended
+direction.
 
-* Must return at least one ``Position`` (often just the immediate neighbor).
-* Should not mutate ``State``.
-* May return multiple positions to simulate chained micro‑steps (sliding,
-  gravity fall, wind, etc.).
-
-Performance: The functions here use straightforward iteration over the
-``state.position`` map for collision checks; this is acceptable for small
-grids. For very large maps a spatial index could be introduced.
+Users can select from built-in movement functions via the ``MOVE_FN_REGISTRY``
+or define custom functions adhering to the same signature.
 """
 
 import random
@@ -28,10 +23,8 @@ from grid_universe.utils.grid import is_blocked_at
 
 
 def cardinal_move_fn(state: State, eid: EntityID, action: Action) -> Sequence[Position]:
-    """Single-tile cardinal step.
-
-    Returns the adjacent tile in the direction of ``action`` without bounds
-    wrapping. Caller handles blocking and validity.
+    """Single-step cardinal movement in the intended direction.
+    Returns the adjacent tile in the specified direction.
     """
     pos = state.position[eid]
     dx, dy = {
@@ -46,10 +39,9 @@ def cardinal_move_fn(state: State, eid: EntityID, action: Action) -> Sequence[Po
 def wrap_around_move_fn(
     state: State, eid: EntityID, action: Action
 ) -> Sequence[Position]:
-    """Cardinal step with toroidal wrapping.
-
-    Requires ``state.width`` & ``state.height``. Moving off an edge re-enters
-    on the opposite side.
+    """Cardinal step with wrap-around at grid edges.
+    Returns the adjacent tile in the direction of ``action``, wrapping around
+    the grid if the edge is crossed.
     """
     pos = state.position[eid]
     dx, dy = {
@@ -80,10 +72,9 @@ def mirror_move_fn(state: State, eid: EntityID, action: Action) -> Sequence[Posi
 
 
 def slippery_move_fn(state: State, eid: EntityID, action: Action) -> Sequence[Position]:
-    """Slide in direction until blocked or edge.
-
-    Returns the whole path of intermediate positions; if the first tile is
-    blocked returns the current position (no movement).
+    """Cardinal step with sliding until blocked.
+    The entity continues moving in the chosen direction until blocked, simulating
+    a slippery surface. If the first adjacent tile is blocked, no movement occurs.
     """
     pos = state.position[eid]
     dx, dy = {
@@ -107,9 +98,10 @@ def slippery_move_fn(state: State, eid: EntityID, action: Action) -> Sequence[Po
 
 def windy_move_fn(state: State, eid: EntityID, action: Action) -> Sequence[Position]:
     """Primary cardinal step plus optional wind drift.
-
-    With 30%% probability (per deterministic RNG seeded by ``state.seed`` and
-    turn) a perpendicular single-tile drift is appended.
+    The first step is always in the intended direction. Then with 30% chance a
+    random wind drift step is applied in a random cardinal direction (which may
+    be the same as the original). If the wind step would go out-of-bounds, it is
+    skipped.
     """
     pos = state.position[eid]
     dx, dy = {

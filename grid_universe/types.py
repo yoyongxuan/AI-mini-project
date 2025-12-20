@@ -1,9 +1,3 @@
-"""Common type aliases and enumerations.
-
-``MoveFn`` and ``ObjectiveFn`` are central extension points used in the
-``State`` to allow pluggable movement / win condition behavior.
-"""
-
 from enum import StrEnum, auto
 from typing import Callable, Sequence, TYPE_CHECKING
 
@@ -21,7 +15,7 @@ ObjectiveFn = Callable[["State", "EntityID"], bool]
 
 
 class EffectType(StrEnum):
-    """Effect component categories (reflected in serialized observations)."""
+    """Types of effects that can be applied to entities."""
 
     IMMUNITY = auto()
     PHASING = auto()
@@ -29,7 +23,7 @@ class EffectType(StrEnum):
 
 
 class EffectLimit(StrEnum):
-    """Limit semantics for effects (time or usage based)."""
+    """Types of limits for effect application."""
 
     TIME = auto()
     USAGE = auto()

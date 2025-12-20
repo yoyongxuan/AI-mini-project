@@ -1,9 +1,7 @@
 """Portal teleportation system.
 
-Moves entering collidable entities from a portal to its paired portal's
-position. An entity is considered *entering* if its previous position differs
-from the current one and it is present in the augmented trail for the portal's
-tile this step.
+Entities that move onto a portal are teleported to the paired portal's location,
+if unblocked.
 """
 
 from dataclasses import replace

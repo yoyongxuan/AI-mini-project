@@ -1,11 +1,10 @@
-"""Objective predicate functions and registry.
+"""
+Defines built-in objective functions for determining win conditions in Grid
+Universe environments.
 
-Each objective function answers: *"Has the agent satisfied the win
-condition?"* They are pure predicates over a :class:`State` and an ``agent_id``.
-The main reducer checks ``state.objective_fn`` after each full action step to
-decide whether to set ``state.win``.
-
-Functions here should be fast (O(number of relevant components)).
+Each function adheres to the ``ObjectiveFn`` signature, accepting the current
+``State`` and the agent's entity ID, and returning a boolean indicating whether
+the win condition has been met.
 """
 
 from typing import Dict
@@ -25,7 +24,7 @@ def exit_objective_fn(state: State, agent_id: EntityID) -> bool:
 
 
 def collect_required_objective_fn(state: State, agent_id: EntityID) -> bool:
-    """All entities marked ``Required`` have been collected (no longer collectible)."""
+    """All entities marked ``Required`` have been collected."""
     return all((eid not in state.collectible) for eid in state.required)
 
 
@@ -70,4 +69,7 @@ OBJECTIVE_FN_REGISTRY: Dict[str, ObjectiveFn] = {
     "unlock": all_unlocked_objective_fn,
     "push": all_pushable_at_exit_objective_fn,
 }
-"""Name → objective predicate mapping for level configuration."""
+"""Registry of built-in objective functions by name.
+
+Each function answers whether the agent has satisfied the win condition.
+"""

@@ -1,8 +1,8 @@
-"""Tile interaction systems.
+"""
+Tile reward and cost systems.
 
-Applies passive score modifications for standing on tiles that carry
-``Rewardable`` (positive) or ``Cost`` (negative) components which are not
-collected through the collectible system (i.e. non-pickup surfaces).
+Increases or decreases the agent's score based on non-collectible
+rewardable or cost-bearing entities located on the agent's current tile.
 """
 
 from dataclasses import replace

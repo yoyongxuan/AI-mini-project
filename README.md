@@ -9,7 +9,7 @@ Built for: rapid experimentation (movement/objective swaps), reproducible RL ben
 ---
 
 <p align="center">
-    <a href="https://rizkiarm.github.io/grid-universe/">Docs</a> •
+    <a href="https://grid-universe.github.io/grid-universe/">Docs</a> •
     <a href="https://grid-universe.streamlit.app/">App</a> •
     <a href="LICENSE">MIT License</a>
 </p>
@@ -73,7 +73,7 @@ for a in [Action.RIGHT, Action.DOWN, Action.PICK_UP]:
 print(state.score, state.turn, state.win, state.lose)
 ```
 
-More examples below and full docs: https://rizkiarm.github.io/grid-universe/
+More examples below and full docs: https://grid-universe.github.io/grid-universe/
 
 ---
 
