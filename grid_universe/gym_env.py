@@ -40,7 +40,6 @@ Customization hooks:
 The environment is purposely *not* vectorized; wrap externally if needed.
 """
 
-from enum import IntEnum, auto
 import string
 import gymnasium as gym
 from gymnasium import spaces
@@ -56,7 +55,7 @@ from grid_universe.levels.convert import from_state  # for Level observation typ
 from grid_universe.levels.grid import (
     Level,
 )
-from grid_universe.actions import Action as BaseAction
+from grid_universe.actions import Action as Action
 from grid_universe.renderer.texture import (
     DEFAULT_ASSET_ROOT,
     DEFAULT_RESOLUTION,
@@ -147,18 +146,6 @@ class Observation(TypedDict):
 
     image: ImageArray
     info: InfoDict
-
-
-class Action(IntEnum):
-    """Stable integer mapping for integration with Gymnasium ``Discrete`` spaces."""
-
-    UP = 0  # start at 0 for explicitness
-    DOWN = auto()
-    LEFT = auto()
-    RIGHT = auto()
-    USE_KEY = auto()
-    PICK_UP = auto()
-    WAIT = auto()
 
 
 def _serialize_effect(state: State, effect_id: EntityID) -> Dict[str, Any]:
@@ -323,7 +310,7 @@ class GridUniverseEnv(gym.Env[Union[Observation, Level], np.integer]):
     """Gymnasium ``Env`` implementation for the Grid Universe.
 
     Parameters mirror the procedural level generator plus rendering knobs. The
-    action space is ``Discrete(len(BaseAction))``; see :mod:`grid_universe.actions`.
+    action space is ``Discrete(len(Action))``; see :mod:`grid_universe.actions`.
     """
 
     metadata = {"render_modes": ["human", "texture"]}
@@ -479,7 +466,7 @@ class GridUniverseEnv(gym.Env[Union[Observation, Level], np.integer]):
             self.observation_space = spaces.Discrete(1)  # type: ignore[assignment]
 
         # Actions
-        self.action_space = spaces.Discrete(len(BaseAction))
+        self.action_space = spaces.Discrete(len(Action))
 
         # Initialize first episode
         self.reset()
@@ -504,7 +491,7 @@ class GridUniverseEnv(gym.Env[Union[Observation, Level], np.integer]):
         return obs, self._get_info()
 
     def step(
-        self, action: np.integer | int | Action | BaseAction
+        self, action: np.integer | int | Action
     ) -> Tuple[Union[Observation, Level], float, bool, bool, Dict[str, object]]:
         """Apply one environment step.
 
@@ -517,29 +504,25 @@ class GridUniverseEnv(gym.Env[Union[Observation, Level], np.integer]):
         """
         assert self.state is not None and self.agent_id is not None
 
-        step_action: BaseAction = BaseAction.WAIT  # default fallback
+        step_action: Action = Action.WAIT  # default fallback
 
-        if isinstance(action, BaseAction):
+        if isinstance(action, Action):
             step_action = action
         else:
-            # Coerce provided action (Action / numpy integer / int) into index
-            if isinstance(action, Action):
-                action_index = int(action.value)
-            else:
-                # Try coercing to int (covers plain int and numpy integer). If this fails, raise.
-                try:
-                    action_index = int(action)
-                except Exception as exc:
-                    raise TypeError(
-                        f"Action must be int-compatible or Action; got {type(action)!r}"
-                    ) from exc
+            # Try coercing to int (covers plain int and numpy integer). If this fails, raise.
+            try:
+                action_index = int(action)
+            except Exception as exc:
+                raise TypeError(
+                    f"Action must be int-compatible or Action; got {type(action)!r}"
+                ) from exc
 
-            if not 0 <= action_index < len(BaseAction):
+            if not 0 <= action_index < len(Action):
                 raise ValueError(
-                    f"Invalid action index {action_index}; expected 0..{len(BaseAction) - 1}"
+                    f"Invalid action index {action_index}; expected 0..{len(Action) - 1}"
                 )
 
-            step_action = list(BaseAction)[action_index]
+            step_action = list(Action)[action_index]
 
         prev_score = self.state.score
         self.state = step(self.state, step_action, agent_id=self.agent_id)
