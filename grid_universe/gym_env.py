@@ -567,14 +567,13 @@ class GridUniverseEnv(gym.Env[Union[Observation, Level], np.integer]):
         """Internal helper constructing the observation per observation_type.
 
         observation_type="image": returns Observation (dict with image + info)
-        observation_type="level": returns a freshly converted authoring-time Level object
-            produced via levels.convert.from_state(state). This allows algorithms to
-            reason over symbolic grid/entity structures directly. NOTE: This mode is
-            not compatible with typical RL libraries expecting a numeric space.
+        observation_type="level": returns a mutable ``Level`` object produced
+            via levels.convert.from_state(state). This allows algorithms to
+            reason over symbolic grid/entity structures directly.
         """
         assert self.state is not None and self.agent_id is not None
         if self._observation_type == "level":
-            # Return authoring-time Level view (lossless reconstruction)
+            # Return mutable Level view
             return from_state(self.state)
 
         # Default image observation path

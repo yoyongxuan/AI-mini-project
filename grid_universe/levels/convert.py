@@ -1,9 +1,9 @@
-"""Conversion utilities between authoring ``Level`` and runtime ``State``.
+"""Conversion utilities between mutable ``Level``/``Entity`` and runtime ``State``.
 
 Two primary operations:
 
-* ``to_state``: Materialize immutable ECS world from a grid of ``EntitySpec``.
-* ``from_state``: Reconstruct a mutable authoring representation from a live state.
+* ``to_state``: Materialize immutable ECS world from a grid of ``Entity``.
+* ``from_state``: Reconstruct a mutable ``Level``/``Entity`` representation from a runtime state.
 
 Handles wiring of portals, pathfinding targets, inventory & status effect
 embedding (nested lists -> separate entities), and assigns deterministic
@@ -28,7 +28,7 @@ from grid_universe.components.properties import (
     Portal,
 )
 from grid_universe.levels.grid import Level, Position
-from grid_universe.levels.entity_spec import EntitySpec, COMPONENT_TO_FIELD
+from grid_universe.levels.entity import Entity, COMPONENT_TO_FIELD
 
 
 def _init_store_maps() -> Dict[str, Dict[EntityID, Any]]:
@@ -69,7 +69,7 @@ def _init_store_maps() -> Dict[str, Dict[EntityID, Any]]:
 
 
 def _alloc_from_obj(
-    obj: EntitySpec,
+    obj: Entity,
     stores: Dict[str, Dict[EntityID, Any]],
     next_eid_ref: List[int],
     place_pos: Optional[Position] = None,
@@ -77,7 +77,7 @@ def _alloc_from_obj(
     """
     Allocate a new EntityID, create Entity(), copy present components from obj, and optionally set Position.
 
-    - obj: authoring-time EntityObject
+    - obj: mutable level Entity
     - stores: store_name -> {eid: component}
     - next_eid_ref: single-item list acting as a mutable counter
     - place_pos: (x, y) to create a Position component; None for off-grid entities
@@ -150,15 +150,15 @@ def _build_state(level: Level, stores: Dict[str, Dict[EntityID, Any]]) -> State:
 
 def to_state(level: Level) -> State:
     """
-    Convert a Level (grid of EntityObject) into an immutable State.
+    Convert a Level (grid of Entity objects) into an immutable State.
 
     Semantics:
-    - Copies all present ECS components from each EntityObject (including Inventory, Status) onto a new Entity.
+        - Copies all present ECS components from each Entity (including Inventory, Status) onto a new entity id.
     - Assigns Position for on-grid entities; nested inventory/effect entities have no Position.
-    - Materializes authoring-only lists:
-        * inventory_list: each item EntityObject becomes a new entity; its id is added to holder's Inventory.item_ids.
+        - Materializes nested lists:
+                * inventory_list: each item Entity becomes a new entity; its id is added to holder's Inventory.item_ids.
           If holder lacks an Inventory component, an empty one is created.
-        * status_list: each effect EntityObject becomes a new entity; its id is added to holder's Status.effect_ids.
+                * status_list: each effect Entity becomes a new entity; its id is added to holder's Status.effect_ids.
           If holder lacks a Status component, an empty one is created.
     - Wiring:
         * pathfind_target_ref: if set and the referenced object is placed, sets Pathfinding.target to that eid,
@@ -168,9 +168,9 @@ def to_state(level: Level) -> State:
     stores: Dict[str, Dict[EntityID, Any]] = _init_store_maps()
     next_eid_ref: List[int] = [0]
 
-    # authoring-object -> eid for on-grid objects
+    # source object -> eid for on-grid objects
     obj_to_eid: Dict[int, EntityID] = {}
-    placed: List[Tuple[EntitySpec, EntityID]] = []
+    placed: List[Tuple[Entity, EntityID]] = []
 
     for y in range(level.height):
         for x in range(level.width):
@@ -179,7 +179,7 @@ def to_state(level: Level) -> State:
                 obj_to_eid[id(obj)] = eid
                 placed.append((obj, eid))
 
-                # Merge/ensure Inventory from component and/or authoring list
+                # Merge/ensure Inventory from component and/or nested list
                 if obj.inventory_list:
                     base_inv: Inventory = stores["inventory"].get(
                         eid,
@@ -197,7 +197,7 @@ def to_state(level: Level) -> State:
                 elif obj.inventory is not None and eid not in stores["inventory"]:
                     stores["inventory"][eid] = obj.inventory
 
-                # Merge/ensure Status from component and/or authoring list
+                # Merge/ensure Status from component and/or nested list
                 if obj.status_list:
                     base_status: Status = stores["status"].get(
                         eid, obj.status if obj.status is not None else Status(pset())
@@ -255,32 +255,34 @@ def to_state(level: Level) -> State:
     return state
 
 
-def _entity_object_from_state(state: State, eid: EntityID) -> EntitySpec:
+def _entity_object_from_state(state: State, eid: EntityID) -> Entity:
     """
-    Reconstruct an authoring-time EntityObject from a State entity id, including Inventory and Status
-    components (if present). Authoring lists (inventory_list/status_list) are initialized empty here.
+    Reconstruct a mutable level :class:`~grid_universe.levels.entity.Entity` from a State entity id.
+
+    Inventory and Status components (if present) are copied. Nested collections
+    (``inventory_list`` / ``status_list``) are initialized empty here.
     """
     kwargs: Dict[str, Any] = {}
     for _, store_name in COMPONENT_TO_FIELD.items():
         store = getattr(state, store_name)
         kwargs[store_name] = store.get(eid)
-    # authoring-only lists start empty; caller may populate from Inventory/Status sets
+    # Nested lists start empty; caller may populate from Inventory/Status sets.
     kwargs["inventory_list"] = []
     kwargs["status_list"] = []
-    return EntitySpec(**kwargs)
+    return Entity(**kwargs)
 
 
 def from_state(state: State) -> Level:
     """
-    Convert an immutable State back into a mutable Level (grid of EntityObject).
+    Convert an immutable State back into a mutable Level (grid of Entity objects).
 
     Behavior:
     - Positioned entities are placed into `Level.grid[y][x]` in ascending eid order (deterministic).
-    - EntityObject components (including Inventory/Status) are reconstructed for positioned entities.
+        - Entity components (including Inventory/Status) are reconstructed for positioned entities.
     - Holder inventory_list/status_list are rebuilt from Inventory.item_ids / Status.effect_ids
-      by reconstructing item/effect EntityObjects (not placed on the grid).
-    - Authoring-time wiring refs (pathfind_target_ref, portal_pair_ref) are also restored for positioned
-      entities when their targets/pairs are themselves positioned.
+            by reconstructing item/effect entities (not placed on the grid).
+        - Reference fields (pathfind_target_ref, portal_pair_ref) are restored for positioned entities
+            when their targets/pairs are themselves positioned.
     """
     level = Level(
         width=state.width,
@@ -296,8 +298,8 @@ def from_state(state: State) -> Level:
         message=state.message,
     )
 
-    # eid -> positioned EntityObject
-    placed_objs: Dict[EntityID, EntitySpec] = {}
+    # eid -> positioned Entity
+    placed_objs: Dict[EntityID, Entity] = {}
 
     # Place entities on the grid
     for eid in sorted(state.position.keys()):
@@ -311,7 +313,7 @@ def from_state(state: State) -> Level:
         placed_objs[eid] = obj
         level.grid[y][x].append(obj)
 
-    # Rebuild authoring lists from Inventory/Status sets
+    # Rebuild nested lists from Inventory/Status sets
     for holder_eid, holder_obj in placed_objs.items():
         inv = state.inventory.get(holder_eid)
         if inv is not None and getattr(inv, "item_ids", None) is not None:
@@ -327,7 +329,7 @@ def from_state(state: State) -> Level:
                 holder_obj.status_list.append(_entity_object_from_state(state, eff_eid))
             holder_obj.status = Status(pset())
 
-    # Restore authoring-time wiring refs for positioned entities
+    # Restore reference fields for positioned entities
     for eid, obj in placed_objs.items():
         # Pathfinding ref
         pf = state.pathfinding.get(eid)

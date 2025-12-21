@@ -1,8 +1,14 @@
-"""Authoring-time mutable entity specification.
+"""Mutable entity specification.
 
-``EntitySpec`` instances gather optional component instances plus authoring
-metadata (inventory/status lists and wiring references). They are converted to
-immutable ECS entities by :mod:`levels.convert`.
+The :class:`~grid_universe.levels.entity.Entity` dataclass is an alternative,
+mutable representation of an ECS entity in :class:`~grid_universe.state.State`.
+
+It stores optional component instances plus additional mutable structure
+(nested inventory/status items and cross-entity references) that can be
+resolved during conversion.
+
+Use :mod:`grid_universe.levels.convert` to convert between this representation
+and the immutable runtime :class:`~grid_universe.state.State`.
 """
 
 from __future__ import annotations
@@ -71,21 +77,20 @@ COMPONENT_TO_FIELD: Dict[Type[Any], str] = {
 }
 
 
-def _empty_objs() -> List["EntitySpec"]:
+def _empty_objs() -> List["Entity"]:
     return []
 
 
 @dataclass
-class EntitySpec:
+class Entity:
     """
-    Mutable bag of ECS components for authoring (no Position here).
-    Authoring-only wiring refs:
-      - pathfind_target_ref: reference to another EntityObject to target
-      - pathfinding_type: desired path type when wiring (if target ref set)
-      - portal_pair_ref: reference to another EntityObject to pair with as a portal
-    Authoring-only nested collections:
-      - inventory: list of EntityObject (items carried; materialized as separate entities)
-      - status: list of EntityObject (effects active; materialized as separate entities)
+    Mutable bag of ECS components used in :class:`~grid_universe.levels.grid.Level`.
+
+    - It omits ``Position`` (position is supplied by the containing grid cell).
+    - It supports extra mutable structure that is resolved during conversion:
+        - wiring refs: ``pathfind_target_ref``, ``pathfinding_type``, ``portal_pair_ref``
+        - nested collections: ``inventory_list`` and ``status_list`` (materialized as
+            separate entities in :func:`grid_universe.levels.convert.to_state`).
     """
 
     # Components
@@ -117,14 +122,14 @@ class EntitySpec:
     time_limit: Optional[TimeLimit] = None
     usage_limit: Optional[UsageLimit] = None
 
-    # Authoring-only nested objects (not State components)
-    inventory_list: List["EntitySpec"] = field(default_factory=_empty_objs)
-    status_list: List["EntitySpec"] = field(default_factory=_empty_objs)
+    # Level-only nested objects (not State components)
+    inventory_list: List["Entity"] = field(default_factory=_empty_objs)
+    status_list: List["Entity"] = field(default_factory=_empty_objs)
 
-    # Authoring-only wiring refs (resolved during conversion)
-    pathfind_target_ref: Optional["EntitySpec"] = None
+    # Level-only reference fields (resolved during conversion)
+    pathfind_target_ref: Optional["Entity"] = None
     pathfinding_type: Optional[PathfindingType] = None
-    portal_pair_ref: Optional["EntitySpec"] = None
+    portal_pair_ref: Optional["Entity"] = None
 
     def iter_components(self) -> List[Tuple[str, Any]]:
         """
@@ -138,4 +143,4 @@ class EntitySpec:
         return out
 
 
-__all__ = ["EntitySpec", "COMPONENT_TO_FIELD"]
+__all__ = ["Entity", "COMPONENT_TO_FIELD"]

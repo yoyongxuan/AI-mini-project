@@ -2,7 +2,7 @@
 
 > A modular, deterministic, fully *immutable* ECS gridworld for research, teaching, prototyping RL ideas, and building puzzle / action mechanics fast.
 
-Grid Universe combines a pure Entity–Component–System model (functional, ordered systems) with flexible authoring and rendering tools. It ships with procedural generators, a Gymnasium wrapper, a Streamlit inspector app, and extensible registries for movement and objectives.
+Grid Universe combines a pure Entity–Component–System model (functional, ordered systems) with flexible level-building and rendering tools. It ships with procedural generators, a Gymnasium wrapper, a Streamlit inspector app, and extensible registries for movement and objectives.
 
 Built for: rapid experimentation (movement/objective swaps), reproducible RL benchmarks, curriculum & teaching demos, and custom gameplay mechanics (portals, powerups, hazards, pushing, keys/doors, moving enemies, pathfinding chasers, etc.).
 
@@ -63,7 +63,7 @@ Built for: rapid experimentation (movement/objective swaps), reproducible RL ben
 Minimal procedural usage:
 
 ```python
-from grid_universe.levels.maze import generate
+from grid_universe.examples.maze import generate
 from grid_universe.actions import Action
 from grid_universe.step import step
 
@@ -116,7 +116,7 @@ If using VS Code / Dev Containers: a pre-configured Python environment (see `.de
 Generate a random maze state, take a step, and render:
 
 ```python
-from grid_universe.levels.maze import generate
+from grid_universe.examples.maze import generate
 from grid_universe.actions import Action
 from grid_universe.step import step
 from grid_universe.renderer.texture import TextureRenderer
@@ -127,7 +127,7 @@ img = TextureRenderer().render(state)
 img.save("frame.png")
 ```
 
-### Authoring a Level
+### Building a Level
 
 Build a 5×5 world manually using factories then convert to runtime `State`:
 
@@ -137,8 +137,10 @@ from grid_universe.levels.factories import create_floor, create_agent, create_co
 from grid_universe.levels.convert import to_state
 from grid_universe.actions import Action
 from grid_universe.step import step
+from grid_universe.moves import default_move_fn
+from grid_universe.objectives import exit_objective_fn
 
-level = Level(width=5, height=5, seed=123)
+level = Level(width=5, height=5, move_fn=default_move_fn, objective_fn=exit_objective_fn, seed=123)
 for y in range(level.height):
     for x in range(level.width):
         level.add((x, y), create_floor())
@@ -162,11 +164,11 @@ from grid_universe.gym_env import GridUniverseEnv
 from grid_universe.examples.maze import generate as maze_generate
 import numpy as np
 
-env = GridUniverseEnv(initial_state_fn=maze_generate, render_mode="texture", width=7, height=7, seed=7)
+env = GridUniverseEnv(initial_state_fn=maze_generate, render_mode="rgb_array", width=7, height=7, seed=7)
 obs, info = env.reset()
 done = False
 while not done:
-    action = env.action_space.sample().astype(np.int64)
+    action = int(env.action_space.sample())
     obs, reward, terminated, truncated, info = env.step(action)
     done = terminated or truncated
 img = env.render()
@@ -217,7 +219,7 @@ Determinism note: Actions + initial seed fully define subsequent States (pure fu
 
 Batch map mutations inside a system before constructing the new `State` for performance.
 
-See deep dive: docs/design/ecs_architecture.md
+See deep dive: docs/engine-dev/architecture/systems-order.md
 
 ---
 
@@ -240,11 +242,11 @@ See deep dive: docs/design/ecs_architecture.md
 
 Built-in movement function names (see `moves.py`):
 
-`default`, `wrap_around_move_fn`, `slippery_move_fn`, `windy_move_fn` (and others as added).
+Registry keys: `default`, `cardinal`, `wrap`, `mirror`, `slippery`, `windy`, `gravity`.
 
 Built-in objective function names (see `objectives.py`):
 
-`default_objective_fn`, `exit_objective_fn`, `collect_objective_fn`, `unlock_objective_fn`, `push_objective_fn`.
+Registry keys: `default`, `collect`, `exit`, `collect_exit`, `unlock`, `push`.
 
 Registries:
 
@@ -282,14 +284,14 @@ obs, info = env.reset()
 done = False
 total = 0
 while not done:
-    action = env.action_space.sample().astype(np.int64)
+    action = int(env.action_space.sample())
     obs, r, term, trunc, info = env.step(action)
     total += r
     done = term or trunc
 print("Episode reward:", total)
 ```
 
-Full schema & details: docs/reference/api/#gym-environment
+Full schema & details: docs/agent-dev/gym/observations.md
 
 ---
 
@@ -297,9 +299,9 @@ Full schema & details: docs/reference/api/#gym-environment
 
 | Domain | Steps |
 |--------|-------|
-| Movement | Implement fn `move_fn(state, pos)` → register in `MOVE_FN_REGISTRY` |
-| Objective | Implement fn `(state) -> bool` (win condition) → register in `OBJECTIVE_FN_REGISTRY` |
-| Component | Add dataclass + store to `State` + map in authoring `EntitySpec` + adapt conversions |
+| Movement | Implement `MoveFn(state, eid, action) -> Sequence[Position]` → register in `MOVE_FN_REGISTRY` |
+| Objective | Implement `ObjectiveFn(state, agent_id) -> bool` → register in `OBJECTIVE_FN_REGISTRY` |
+| Component | Add dataclass + store to `State` + map in the mutable `Entity` spec + adapt conversions |
 | System | Pure `State -> State`; insert in `step()` ordering appropriately |
 | Effect | Add effect + optional limit components; integrate in status tick + GC |
 | Rendering | Extend `DEFAULT_TEXTURE_MAP`, add group rule for recoloring |
@@ -385,7 +387,7 @@ grid_universe/
   gym_env.py       # Gymnasium wrapper
   components/      # properties/ & effects/ dataclasses
   systems/         # Ordered pure systems
-  levels/          # Authoring model, factories, converters, generators
+  levels/          # Mutable Level/Entity model, factories, converters
   renderer/        # TextureRenderer + helpers
   utils/           # ECS, grid, status, inventory, gc, image, trail
   assets/          # Texture packs (kenney, futurama, ...)

@@ -1,13 +1,13 @@
 """Procedural maze level generator example.
 
-This module demonstrates authoring a parameterized maze-based level using the
-``Level`` authoring API and factory helpers, then converting to an immutable
+This module demonstrates building a parameterized maze-based level using the
+``Level`` editing API and factory helpers, then converting to an immutable
 ``State`` suitable for simulation or Gym-style environments.
 
 Design Goals
 ------------
 * Showcase composition of factories (agent, walls, doors, portals, hazards,
-  power-ups, enemies) with authoring-time references (e.g., portal pairing,
+    power-ups, enemies) with reference wiring (e.g., portal pairing,
   enemy pathfinding target reference to the agent) that are resolved during
   ``to_state`` conversion.
 * Provide tunable difficulty levers: wall density, counts of required
@@ -62,7 +62,7 @@ from grid_universe.components.properties import (
 )
 from grid_universe.levels.grid import Level, Position
 from grid_universe.levels.convert import to_state
-from grid_universe.levels.entity_spec import EntitySpec
+from grid_universe.levels.entity import Entity
 from grid_universe.levels.factories import (
     create_agent,
     create_floor,
@@ -194,7 +194,7 @@ def generate(
     """Generate a randomized maze game state.
 
     This function orchestrates maze carving, tile classification, entity
-    placement and authoring-time reference wiring before producing the
+    placement and reference wiring before producing the
     immutable simulation ``State``.
 
     Args:
@@ -282,7 +282,7 @@ def generate(
         if len(open_positions) < 2:
             break
         p1 = create_portal()
-        p2 = create_portal(pair=p1)  # reciprocal authoring-time reference
+        p2 = create_portal(pair=p1)  # reciprocal reference
         level.add(open_positions.pop(), p1)
         level.add(open_positions.pop(), p2)
 
@@ -297,7 +297,7 @@ def generate(
         level.add(door_pos, create_door(key_id=key_id_str))
 
     # 10) Powerups (as pickups)
-    create_effect_fn_map: dict[EffectType, Callable[..., EntitySpec]] = {
+    create_effect_fn_map: dict[EffectType, Callable[..., Entity]] = {
         EffectType.SPEED: create_speed_effect,
         EffectType.IMMUNITY: create_immunity_effect,
         EffectType.PHASING: create_phasing_effect,
@@ -339,7 +339,7 @@ def generate(
             break
         pos = open_non_essential.pop()
 
-        # Explicit pathfinding via reference to the agent (authoring-time)
+        # Explicit pathfinding via reference to the agent
         path_type: Optional[PathfindingType] = None
         if mtype == MovementType.PATHFINDING_LINE:
             path_type = PathfindingType.STRAIGHT_LINE

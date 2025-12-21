@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from grid_universe.levels.grid import Level
 from grid_universe.levels.convert import to_state, from_state
-from grid_universe.levels.entity_spec import EntitySpec, COMPONENT_TO_FIELD
+from grid_universe.levels.entity import Entity, COMPONENT_TO_FIELD
 from grid_universe.levels.factories import (
     create_agent,
     create_coin,
@@ -25,9 +25,9 @@ from grid_universe.components.properties import PathfindingType, AppearanceName
 # ---------- Helpers: Canonicalization ----------
 
 
-def _obj_component_signature(obj: EntitySpec) -> Dict[str, Any]:
+def _obj_component_signature(obj: Entity) -> Dict[str, Any]:
     """
-    Capture an EntityObject's components (excluding authoring-only lists/refs) as a dict.
+    Capture an Entity's components (excluding Level-only nested lists/refs) as a dict.
     """
     sig: Dict[str, Any] = {}
     for _, store_name in COMPONENT_TO_FIELD.items():
@@ -37,7 +37,7 @@ def _obj_component_signature(obj: EntitySpec) -> Dict[str, Any]:
     return sig
 
 
-def _obj_nested_signature(objs: List[EntitySpec]) -> List[Dict[str, Any]]:
+def _obj_nested_signature(objs: List[Entity]) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     for o in objs:
         out.append(_obj_component_signature(o))
@@ -164,7 +164,7 @@ def canonicalize_state(state) -> Dict[Tuple[int, int], List[Dict[str, Any]]]:
 def build_sample_level() -> Level:
     """
     Build a Level that exercises:
-    - agent with empty Inventory/Status components and authoring lists
+    - agent with empty Inventory/Status components and nested lists
     - items/effects in inventory_list/status_list
     - portals paired by reference
     - monster pathfinding to agent by reference
@@ -183,9 +183,9 @@ def build_sample_level() -> Level:
         for y in range(lvl.height):
             lvl.add((x, y), create_floor(1))
 
-    # Agent at (1,1) with explicit Inventory/Status components and empty authoring lists
+    # Agent at (1,1) with explicit Inventory/Status components and empty nested lists
     agent = create_agent(health=10)
-    # put a key and a speed effect into authoring lists (they'll materialize as entities without Position)
+    # Put a key and a speed effect into nested lists (they'll materialize as entities without Position)
     agent.inventory_list.append(create_key("red"))
     agent.status_list.append(create_speed_effect(2, time=5))
     lvl.add((1, 1), agent)
@@ -221,7 +221,7 @@ def build_sample_level() -> Level:
 
 def test_level_roundtrip_lossless() -> None:
     """
-    Level -> State -> Level preserves component structure and authoring lists.
+    Level -> State -> Level preserves component structure and nested lists.
     Also verifies wiring refs are restored (pathfinding target, portal pair).
     """
     level1 = build_sample_level()
@@ -239,7 +239,7 @@ def test_level_roundtrip_lossless() -> None:
     # Also ensure portals are paired by portal_pair_ref bidirectionally
     agent_obj = None
     monster_obj = None
-    portal_objs: List[EntitySpec] = []
+    portal_objs: List[Entity] = []
     for y in range(level2.height):
         for x in range(level2.width):
             for obj in level2.grid[y][x]:

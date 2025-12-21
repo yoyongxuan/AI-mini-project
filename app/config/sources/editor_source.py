@@ -45,9 +45,9 @@ from ..shared_ui import texture_map_section
 
 """Streamlit interactive level editor source.
 
-Provides an authoring UI where the user selects an entity factory + its
+Provides an editing UI where the user selects an entity factory + its
 parameters, then clicks cells in a grid to place / replace entities.
-The current layout is converted to a ``State`` via the existing authoring
+The current layout is converted to a ``State`` via the mutable Level/Entity
 API (``levels.Level`` + ``factories`` + ``levels.convert.to_state``) and
 rendered live so users get immediate feedback.
 
@@ -57,7 +57,7 @@ Design constraints:
     when ``build_config`` returns it snapshots that grid into an immutable
     tuple structure inside ``EditorConfig``.
   * Palette driven: choose a *tool* (entity type or eraser) then click cells.
-  * Each cell stores a list[EntitySpec] (floor + zero/one foreground objects).
+  * Each cell stores a list of entity tokens (floor + zero/one foreground objects).
   * Always ensure a floor tile exists for rendering consistency.
   * Supports parameterized factories (health for agent, key id, damage, etc.).
   * Portal pairing: user selects Portal tool and clicks two cells in sequence
