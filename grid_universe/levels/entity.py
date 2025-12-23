@@ -131,6 +131,17 @@ class Entity:
     pathfinding_type: Optional[PathfindingType] = None
     portal_pair_ref: Optional["Entity"] = None
 
+    def __repr__(self) -> str:
+        """String representation showing non-None components and non-empty nested objects."""
+        components = ", ".join(
+            f"{store_name}={comp!r}" for store_name, comp in self.iter_components()
+        )
+        if self.inventory_list:
+            components += f", inventory_list={self.inventory_list!r}"
+        if self.status_list:
+            components += f", status_list={self.status_list!r}"
+        return f"{self.__class__.__name__}({components})"
+
     def iter_components(self) -> List[Tuple[str, Any]]:
         """
         Yield (store_name, component) for non-None component fields that map to State stores.
