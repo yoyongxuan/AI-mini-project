@@ -15,7 +15,6 @@ from grid_universe.components import (
     Collectible,
     Exit,
     Appearance,
-    AppearanceName,
 )
 from grid_universe.actions import Action
 from grid_universe.step import step
@@ -41,7 +40,7 @@ def make_push_state(
     agent[agent_id] = Agent()
     inventory[agent_id] = Inventory(pset())
     collidable[agent_id] = Collidable()
-    appearance[agent_id] = Appearance(name=AppearanceName.HUMAN)
+    appearance[agent_id] = Appearance(name="human")
 
     box_ids: List[EntityID] = []
     for bpos in box_positions:
@@ -49,7 +48,7 @@ def make_push_state(
         pos[bid] = Position(*bpos)
         pushable[bid] = Pushable()
         collidable[bid] = Collidable()
-        appearance[bid] = Appearance(name=AppearanceName.BOX)
+        appearance[bid] = Appearance(name="box")
         box_ids.append(bid)
 
     wall_ids: List[EntityID] = []
@@ -58,7 +57,7 @@ def make_push_state(
         pos[wid] = Position(*wpos)
         blocking[wid] = Blocking()
         collidable[wid] = Collidable()
-        appearance[wid] = Appearance(name=AppearanceName.WALL)
+        appearance[wid] = Appearance(name="wall")
         wall_ids.append(wid)
 
     state: State = State(
@@ -336,9 +335,7 @@ def test_push_box_missing_position_component() -> None:
         state,
         pushable=state.pushable.set(missing_box_id, Pushable()),
         collidable=state.collidable.set(missing_box_id, Collidable()),
-        appearance=state.appearance.set(
-            missing_box_id, Appearance(name=AppearanceName.BOX)
-        ),
+        appearance=state.appearance.set(missing_box_id, Appearance(name="box")),
         # No position for box 42
     )
     state = step(

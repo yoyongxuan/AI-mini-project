@@ -1,5 +1,5 @@
 from .agent import Agent
-from .appearance import Appearance, AppearanceName
+from .appearance import Appearance
 from .blocking import Blocking
 from .collectible import Collectible
 from .collidable import Collidable
@@ -24,7 +24,6 @@ from .status import Status
 __all__ = [
     "Agent",
     "Appearance",
-    "AppearanceName",
     "Blocking",
     "Collectible",
     "Collidable",

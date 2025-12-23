@@ -41,7 +41,7 @@ from functools import lru_cache
 from typing import Callable, Dict, Optional, Tuple, List
 from PIL import Image
 from pyrsistent import pmap
-from grid_universe.components.properties.appearance import Appearance, AppearanceName
+from grid_universe.components.properties.appearance import Appearance
 from grid_universe.state import State
 from grid_universe.types import EntityID
 from grid_universe.utils.image import (
@@ -56,7 +56,7 @@ DEFAULT_RESOLUTION = 640
 DEFAULT_SUBICON_PERCENT = 0.4
 DEFAULT_ASSET_ROOT = os.path.join(Path(__file__).parent.parent.resolve(), "assets")
 
-ObjectAsset = Tuple[AppearanceName, Tuple[str, ...]]
+ObjectAsset = Tuple[str, Tuple[str, ...]]
 
 
 @dataclass(frozen=True)
@@ -94,97 +94,76 @@ TextureMap = Dict[ObjectAsset, str]
 
 
 IMAGEN1_TEXTURE_MAP: TextureMap = {
-    (
-        AppearanceName.HUMAN,
-        tuple([]),
-    ): "imagen1/human",
-    (
-        AppearanceName.HUMAN,
-        tuple(["dead"]),
-    ): "imagen1/sleeping",
-    (AppearanceName.COIN, tuple([])): "imagen1/coin",
-    (AppearanceName.CORE, tuple(["requirable"])): "imagen1/gem",
-    (AppearanceName.BOX, tuple([])): "imagen1/metalbox",
-    (AppearanceName.BOX, tuple(["pushable"])): "imagen1/box",
-    (AppearanceName.MONSTER, tuple([])): "imagen1/robot",
-    (
-        AppearanceName.MONSTER,
-        tuple(["pathfinding"]),
-    ): "imagen1/wolf",
-    (AppearanceName.KEY, tuple([])): "imagen1/key",
-    (AppearanceName.PORTAL, tuple([])): "imagen1/portal",
-    (AppearanceName.DOOR, tuple(["locked"])): "imagen1/locked",
-    (AppearanceName.DOOR, tuple([])): "imagen1/opened",
-    (AppearanceName.SHIELD, tuple(["immunity"])): "imagen1/shield",
-    (AppearanceName.GHOST, tuple(["phasing"])): "imagen1/ghost",
-    (AppearanceName.BOOTS, tuple(["speed"])): "imagen1/boots",
-    (AppearanceName.SPIKE, tuple([])): "imagen1/spike",
-    (AppearanceName.LAVA, tuple([])): "imagen1/lava",
-    (AppearanceName.EXIT, tuple([])): "imagen1/exit",
-    (AppearanceName.WALL, tuple([])): "imagen1/wall",
-    (AppearanceName.FLOOR, tuple([])): "imagen1/floor",
+    ("human", tuple([])): "imagen1/human",
+    ("human", tuple(["dead"])): "imagen1/sleeping",
+    ("coin", tuple([])): "imagen1/coin",
+    ("core", tuple(["requirable"])): "imagen1/gem",
+    ("box", tuple([])): "imagen1/metalbox",
+    ("box", tuple(["pushable"])): "imagen1/box",
+    ("monster", tuple([])): "imagen1/robot",
+    ("monster", tuple(["pathfinding"])): "imagen1/wolf",
+    ("key", tuple([])): "imagen1/key",
+    ("portal", tuple([])): "imagen1/portal",
+    ("door", tuple(["locked"])): "imagen1/locked",
+    ("door", tuple([])): "imagen1/opened",
+    ("shield", tuple(["immunity"])): "imagen1/shield",
+    ("ghost", tuple(["phasing"])): "imagen1/ghost",
+    ("boots", tuple(["speed"])): "imagen1/boots",
+    ("spike", tuple([])): "imagen1/spike",
+    ("lava", tuple([])): "imagen1/lava",
+    ("exit", tuple([])): "imagen1/exit",
+    ("wall", tuple([])): "imagen1/wall",
+    ("floor", tuple([])): "imagen1/floor",
 }
 
 
 KENNEY_TEXTURE_MAP: TextureMap = {
     (
-        AppearanceName.HUMAN,
+        "human",
         tuple([]),
     ): "kenney/animated_characters/male_adventurer/maleAdventurer_idle.png",
-    (
-        AppearanceName.HUMAN,
-        tuple(["dead"]),
-    ): "kenney/animated_characters/zombie/zombie_fall.png",
-    (AppearanceName.COIN, tuple([])): "kenney/items/coinGold.png",
-    (AppearanceName.CORE, tuple(["requirable"])): "kenney/items/gold_1.png",
-    (AppearanceName.BOX, tuple([])): "kenney/tiles/boxCrate.png",
-    (AppearanceName.BOX, tuple(["pushable"])): "kenney/tiles/boxCrate_double.png",
-    (AppearanceName.MONSTER, tuple([])): "kenney/enemies/slimeBlue.png",
-    (
-        AppearanceName.MONSTER,
-        tuple(["pathfinding"]),
-    ): "kenney/enemies/slimeBlue_move.png",
-    (AppearanceName.KEY, tuple([])): "kenney/items/keyRed.png",
-    (AppearanceName.PORTAL, tuple([])): "kenney/items/star.png",
-    (AppearanceName.DOOR, tuple(["locked"])): "kenney/tiles/lockRed.png",
-    (AppearanceName.DOOR, tuple([])): "kenney/tiles/doorClosed_mid.png",
-    (AppearanceName.SHIELD, tuple(["immunity"])): "kenney/items/gemBlue.png",
-    (AppearanceName.GHOST, tuple(["phasing"])): "kenney/items/gemGreen.png",
-    (AppearanceName.BOOTS, tuple(["speed"])): "kenney/items/gemRed.png",
-    (AppearanceName.SPIKE, tuple([])): "kenney/tiles/spikes.png",
-    (AppearanceName.LAVA, tuple([])): "kenney/tiles/lava.png",
-    (AppearanceName.EXIT, tuple([])): "kenney/tiles/signExit.png",
-    (AppearanceName.WALL, tuple([])): "kenney/tiles/brickBrown.png",
-    (AppearanceName.FLOOR, tuple([])): "kenney/tiles/brickGrey.png",
+    ("human", tuple(["dead"])): "kenney/animated_characters/zombie/zombie_fall.png",
+    ("coin", tuple([])): "kenney/items/coinGold.png",
+    ("core", tuple(["requirable"])): "kenney/items/gold_1.png",
+    ("box", tuple([])): "kenney/tiles/boxCrate.png",
+    ("box", tuple(["pushable"])): "kenney/tiles/boxCrate_double.png",
+    ("monster", tuple([])): "kenney/enemies/slimeBlue.png",
+    ("monster", tuple(["pathfinding"])): "kenney/enemies/slimeBlue_move.png",
+    ("key", tuple([])): "kenney/items/keyRed.png",
+    ("portal", tuple([])): "kenney/items/star.png",
+    ("door", tuple(["locked"])): "kenney/tiles/lockRed.png",
+    ("door", tuple([])): "kenney/tiles/doorClosed_mid.png",
+    ("shield", tuple(["immunity"])): "kenney/items/gemBlue.png",
+    ("ghost", tuple(["phasing"])): "kenney/items/gemGreen.png",
+    ("boots", tuple(["speed"])): "kenney/items/gemRed.png",
+    ("spike", tuple([])): "kenney/tiles/spikes.png",
+    ("lava", tuple([])): "kenney/tiles/lava.png",
+    ("exit", tuple([])): "kenney/tiles/signExit.png",
+    ("wall", tuple([])): "kenney/tiles/brickBrown.png",
+    ("floor", tuple([])): "kenney/tiles/brickGrey.png",
 }
 
 FUTURAMA_TEXTURE_MAP: TextureMap = {
-    (
-        AppearanceName.HUMAN,
-        tuple([]),
-    ): "futurama/character01",
-    (
-        AppearanceName.HUMAN,
-        tuple(["dead"]),
-    ): "futurama/character02",
-    (AppearanceName.COIN, tuple([])): "futurama/character03",
-    (AppearanceName.CORE, tuple(["requirable"])): "futurama/character04",
-    (AppearanceName.BOX, tuple([])): "futurama/character06",
-    (AppearanceName.BOX, tuple(["pushable"])): "futurama/character07",
-    (AppearanceName.MONSTER, tuple([])): "futurama/character08",
-    (AppearanceName.MONSTER, tuple(["pathfinding"])): "futurama/character09",
-    (AppearanceName.KEY, tuple([])): "futurama/character10",
-    (AppearanceName.PORTAL, tuple([])): "futurama/character11",
-    (AppearanceName.DOOR, tuple(["locked"])): "futurama/character12",
-    (AppearanceName.DOOR, tuple([])): "futurama/character13",
-    (AppearanceName.SHIELD, tuple(["immunity"])): "futurama/character14",
-    (AppearanceName.GHOST, tuple(["phasing"])): "futurama/character15",
-    (AppearanceName.BOOTS, tuple(["speed"])): "futurama/character16",
-    (AppearanceName.SPIKE, tuple([])): "futurama/character17",
-    (AppearanceName.LAVA, tuple([])): "futurama/character18",
-    (AppearanceName.EXIT, tuple([])): "futurama/character19",
-    (AppearanceName.WALL, tuple([])): "futurama/character20",
-    (AppearanceName.FLOOR, tuple([])): "futurama/blank.png",
+    ("human", tuple([])): "futurama/character01",
+    ("human", tuple(["dead"])): "futurama/character02",
+    ("coin", tuple([])): "futurama/character03",
+    ("core", tuple(["requirable"])): "futurama/character04",
+    ("box", tuple([])): "futurama/character06",
+    ("box", tuple(["pushable"])): "futurama/character07",
+    ("monster", tuple([])): "futurama/character08",
+    ("monster", tuple(["pathfinding"])): "futurama/character09",
+    ("key", tuple([])): "futurama/character10",
+    ("portal", tuple([])): "futurama/character11",
+    ("door", tuple(["locked"])): "futurama/character12",
+    ("door", tuple([])): "futurama/character13",
+    ("shield", tuple(["immunity"])): "futurama/character14",
+    ("ghost", tuple(["phasing"])): "futurama/character15",
+    ("boots", tuple(["speed"])): "futurama/character16",
+    ("spike", tuple([])): "futurama/character17",
+    ("lava", tuple([])): "futurama/character18",
+    ("exit", tuple([])): "futurama/character19",
+    ("wall", tuple([])): "futurama/character20",
+    ("floor", tuple([])): "futurama/blank.png",
 }
 
 DEFAULT_TEXTURE_MAP: TextureMap = IMAGEN1_TEXTURE_MAP
@@ -308,7 +287,7 @@ def get_object_renderings(
     objects for subsequent texture lookup and layering decisions.
     """
     renderings: List[ObjectRendering] = []
-    default_appearance: Appearance = Appearance(name=AppearanceName.NONE)
+    default_appearance: Appearance = Appearance(name="none")
     for eid in eids:
         appearance = state.appearance.get(eid, default_appearance)
         properties = tuple(
@@ -443,6 +422,25 @@ def select_texture_from_directory(
     return os.path.join(dir, chosen)
 
 
+def validate_appearance_names(state: State, texture_map: TextureMap) -> None:
+    """Validate that all appearance names in the state have a corresponding texture.
+
+    Raises:
+        ValueError: If any appearance name in the state is missing from the texture map.
+    """
+    appearance_names_in_state = set(
+        appearance.name for appearance in state.appearance.values()
+    )
+    appearance_names_in_texture_map = set(
+        name for (name, _) in texture_map.keys()
+    )
+    missing_names = appearance_names_in_state - appearance_names_in_texture_map
+    if missing_names:
+        raise ValueError(
+            f"Missing appearance names in texture map: {missing_names}"
+        )
+
+
 def render(
     state: State,
     resolution: int = DEFAULT_RESOLUTION,
@@ -476,6 +474,8 @@ def render(
 
     if texture_map is None:
         texture_map = DEFAULT_TEXTURE_MAP
+
+    validate_appearance_names(state, texture_map)
 
     if cache is None:
         cache = {}

@@ -227,7 +227,7 @@ def _serialize_inventory_item(state: State, item_id: EntityID) -> Dict[str, Any]
     # Appearance (optional extra metadata)
     if item_id in state.appearance:
         try:
-            item["appearance_name"] = state.appearance[item_id].name.name
+            item["appearance_name"] = state.appearance[item_id].name
         except Exception:
             item["appearance_name"] = ""
     return item
@@ -331,7 +331,7 @@ class GridUniverseEnv(gym.Env[Union[Observation, Level], np.integer]):
         Args:
             render_mode (str): "rgb_array" to return PIL image frames, "human" to open a window.
             render_resolution (int): Width (pixels) of rendered image (height derived).
-            render_texture_map (TextureMap): Mapping of ``(AppearanceName, properties)`` to asset paths.
+            render_texture_map (TextureMap): Mapping of ``(appearance_name, properties)`` to asset paths.
             initial_state_fn (Callable[..., State]): Callable returning an initial ``State``.
             **kwargs: Forwarded to ``initial_state_fn`` (e.g., size, densities, seed).
         """

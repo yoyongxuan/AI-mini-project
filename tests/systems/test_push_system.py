@@ -12,7 +12,6 @@ from grid_universe.components import (
     Pushable,
     Blocking,
     Appearance,
-    AppearanceName,
     Exit,
     Collectible,
     Portal,
@@ -42,7 +41,7 @@ def make_push_state(
     agent[agent_id] = Agent()
     inventory[agent_id] = Inventory(pset())
     collidable[agent_id] = Collidable()
-    appearance[agent_id] = Appearance(name=AppearanceName.HUMAN)
+    appearance[agent_id] = Appearance(name="human")
 
     box_ids: List[EntityID] = []
     if box_positions:
@@ -51,7 +50,7 @@ def make_push_state(
             pos[bid] = Position(*bpos)
             pushable[bid] = Pushable()
             collidable[bid] = Collidable()
-            appearance[bid] = Appearance(name=AppearanceName.BOX)
+            appearance[bid] = Appearance(name="box")
             box_ids.append(bid)
 
     wall_ids: List[EntityID] = []
@@ -61,7 +60,7 @@ def make_push_state(
             pos[wid] = Position(*wpos)
             blocking[wid] = Blocking()
             collidable[wid] = Collidable()
-            appearance[wid] = Appearance(name=AppearanceName.WALL)
+            appearance[wid] = Appearance(name="wall")
             wall_ids.append(wid)
 
     state: State = State(

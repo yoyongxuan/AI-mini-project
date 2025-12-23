@@ -56,7 +56,6 @@ from grid_universe.types import (
 from grid_universe.moves import default_move_fn
 from grid_universe.objectives import default_objective_fn
 from grid_universe.components.properties import (
-    AppearanceName,
     MovingAxis,
     PathfindingType,
 )
@@ -97,7 +96,7 @@ PowerupSpec = Tuple[
 ]
 DamageAmount = int
 IsLethal = bool
-HazardSpec = Tuple[AppearanceName, DamageAmount, IsLethal]
+HazardSpec = Tuple[str, DamageAmount, IsLethal]
 
 DEFAULT_POWERUPS: List[PowerupSpec] = [
     (EffectType.SPEED, EffectLimit.TIME, 10, {"multiplier": 2}),
@@ -106,8 +105,8 @@ DEFAULT_POWERUPS: List[PowerupSpec] = [
 ]
 
 DEFAULT_HAZARDS: List[HazardSpec] = [
-    (AppearanceName.LAVA, 5, True),
-    (AppearanceName.SPIKE, 3, False),
+    ("lava", 5, True),
+    ("spike", 3, False),
 ]
 
 

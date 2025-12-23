@@ -6,7 +6,7 @@ from grid_universe.levels.convert import to_state
 from grid_universe.moves import default_move_fn
 from grid_universe.objectives import default_objective_fn, exit_objective_fn
 from grid_universe.state import State
-from grid_universe.components.properties import AppearanceName, MovingAxis
+from grid_universe.components.properties import MovingAxis
 from grid_universe.levels.factories import (
     create_floor,
     create_wall,
@@ -293,7 +293,7 @@ def build_level_hazard_detour(seed: int = 106) -> State:
     # Central hazard (2 dmg); side wall encourages detour, but cost remains uniform except coin tiles
     lvl.add(
         (w // 2 - 1, h // 2),
-        create_hazard(AppearanceName.SPIKE, damage=HAZARD_DAMAGE, lethal=False),
+        create_hazard("spike", damage=HAZARD_DAMAGE, lethal=False),
     )
     for y in range(1, h - 1):
         if y != h // 2:
@@ -440,7 +440,7 @@ def build_level_power_shield(seed: int = 110) -> State:
     lvl.add((2, h // 2 - 3), create_immunity_effect(usage=5))  # Shield
     lvl.add(
         (w // 2, h // 2),
-        create_hazard(AppearanceName.SPIKE, damage=HAZARD_DAMAGE, lethal=False),
+        create_hazard("spike", damage=HAZARD_DAMAGE, lethal=False),
     )
     return to_state(lvl)
 

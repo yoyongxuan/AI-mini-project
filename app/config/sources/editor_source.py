@@ -28,7 +28,6 @@ from grid_universe.levels.factories import (
     create_speed_effect,
     create_wall,
 )
-from grid_universe.components.properties.appearance import AppearanceName
 from grid_universe.components.properties import MovingAxis
 from grid_universe.levels.convert import to_state
 from grid_universe.gym_env import GridUniverseEnv
@@ -308,15 +307,13 @@ PALETTE: Dict[str, ToolSpec] = {
     ),
     "spike": ToolSpec(
         "Spike",
-        lambda p: create_hazard(AppearanceName.SPIKE, p["damage"], p["lethal"]),
+        lambda p: create_hazard("spike", p["damage"], p["lethal"]),
         _hazard_params("spike"),
         icon="⚓",
     ),
     "lava": ToolSpec(
         "Lava",
-        lambda p: create_hazard(
-            AppearanceName.LAVA, p["damage"], p.get("lethal", True)
-        ),
+        lambda p: create_hazard("lava", p["damage"], p.get("lethal", True)),
         _hazard_params("lava"),
         icon="🔥",
     ),
@@ -676,7 +673,7 @@ def _factory_call_str(ttype: str, params: Dict[str, Any]) -> str:
     if ttype == "spike":
         return (
             "create_hazard("
-            "AppearanceName.SPIKE, "
+            '"spike", '
             f"{int(params.get('damage', 2))}, "
             f"{repr(bool(params.get('lethal', False)))}"
             ")"
@@ -684,7 +681,7 @@ def _factory_call_str(ttype: str, params: Dict[str, Any]) -> str:
     if ttype == "lava":
         return (
             "create_hazard("
-            "AppearanceName.LAVA, "
+            '"lava", '
             f"{int(params.get('damage', 2))}, "
             f"{repr(bool(params.get('lethal', True)))}"
             ")"
@@ -729,7 +726,6 @@ def _generate_level_code(cfg: EditorConfig) -> str:
     portal_positions: List[Tuple[int, int]] = []
     grouped: Dict[str, List[Tuple[int, int]]] = {}
     factories_used: Dict[str, bool] = {}
-    uses_appearance_name = False
     uses_moving_axis = False
 
     def _mark_factory(ttype: str) -> None:
@@ -766,8 +762,6 @@ def _generate_level_code(cfg: EditorConfig) -> str:
                     _mark_factory("portal")
                     continue
                 params = cast(Dict[str, Any], token.get("params", {}) or {})
-                if ttype in ("spike", "lava"):
-                    uses_appearance_name = True
                 if ttype in ("box", "monster"):
                     if params.get("moving_axis") is not None:
                         uses_moving_axis = True
@@ -795,10 +789,6 @@ def _generate_level_code(cfg: EditorConfig) -> str:
     if factories_used:
         factory_imports = ", ".join(sorted(factories_used.keys()))
         append(f"from grid_universe.levels.factories import {factory_imports}")
-    if uses_appearance_name:
-        append(
-            "from grid_universe.components.properties.appearance import AppearanceName"
-        )
     if uses_moving_axis:
         append("from grid_universe.components.properties import MovingAxis")
     append("from grid_universe.levels.convert import to_state")

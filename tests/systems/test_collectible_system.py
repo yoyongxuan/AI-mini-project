@@ -10,7 +10,6 @@ from grid_universe.components import (
     Position,
     Requirable,
     Appearance,
-    AppearanceName,
 )
 from grid_universe.entity import new_entity_id
 from grid_universe.types import EntityID
@@ -40,10 +39,8 @@ def make_collectible_state(
     rewardable: PMap[EntityID, Rewardable] = pmap()
     requirable: PMap[EntityID, Requirable] = pmap()
     appearance: Dict[EntityID, Appearance] = {
-        agent_id: Appearance(name=AppearanceName.HUMAN),
-        collectible_id: Appearance(
-            name=AppearanceName.COIN if collect_type == "item" else AppearanceName.CORE
-        ),
+        agent_id: Appearance(name="human"),
+        collectible_id: Appearance(name=("coin" if collect_type == "item" else "core")),
     }
 
     if collect_type == "rewardable":
@@ -112,10 +109,10 @@ def test_pickup_multiple_collectibles_all_types() -> None:
     rewardable = pmap({rewardable_id: Rewardable(amount=10)})
     requirable = pmap({requirable_id: Requirable()})
     appearance = {
-        agent_id: Appearance(name=AppearanceName.HUMAN),
-        item_id: Appearance(name=AppearanceName.COIN),
-        rewardable_id: Appearance(name=AppearanceName.CORE),
-        requirable_id: Appearance(name=AppearanceName.CORE),
+        agent_id: Appearance(name="human"),
+        item_id: Appearance(name="coin"),
+        rewardable_id: Appearance(name="core"),
+        requirable_id: Appearance(name="core"),
     }
 
     state = State(
@@ -150,10 +147,7 @@ def test_pickup_no_inventory_does_nothing() -> None:
     pos = {agent_id: Position(0, 0), item_id: Position(0, 0)}
     agent = pmap({agent_id: Agent()})
     collectible = pmap({item_id: Collectible()})
-    appearance = {
-        agent_id: Appearance(name=AppearanceName.HUMAN),
-        item_id: Appearance(name=AppearanceName.COIN),
-    }
+    appearance = {agent_id: Appearance(name="human"), item_id: Appearance(name="coin")}
 
     state = State(
         width=2,
@@ -176,7 +170,7 @@ def test_pickup_nothing_present_does_nothing() -> None:
     agent_id = new_entity_id()
     agent = pmap({agent_id: Agent()})
     inventory = pmap({agent_id: Inventory(pset())})
-    appearance = {agent_id: Appearance(name=AppearanceName.HUMAN)}
+    appearance = {agent_id: Appearance(name="human")}
 
     state = State(
         width=1,
@@ -201,8 +195,8 @@ def test_pickup_required_collectible() -> None:
     collectible = pmap({req_id: Collectible()})
     requirable = pmap({req_id: Requirable()})
     appearance = {
-        agent_id: Appearance(name=AppearanceName.HUMAN),
-        req_id: Appearance(name=AppearanceName.CORE),
+        agent_id: Appearance(name="human"),
+        req_id: Appearance(name="core"),
     }
 
     state = State(
@@ -228,7 +222,7 @@ def test_pickup_after_collectible_already_removed() -> None:
     item_id = new_entity_id()
     agent = pmap({agent_id: Agent()})
     inventory = pmap({agent_id: Inventory(pset([item_id]))})
-    appearance = {agent_id: Appearance(name=AppearanceName.HUMAN)}
+    appearance = {agent_id: Appearance(name="human")}
 
     state = State(
         width=1,

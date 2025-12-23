@@ -14,7 +14,6 @@ from grid_universe.components import (
     Pushable,
     Portal,
     Appearance,
-    AppearanceName,
 )
 from grid_universe.entity import new_entity_id
 from grid_universe.systems.portal import portal_system
@@ -40,11 +39,9 @@ def make_entity_on_portal_state(
     }
     collidable = {entity_id: Collidable()}
     appearance = {
-        entity_id: Appearance(
-            name=AppearanceName.HUMAN if is_agent else AppearanceName.BOX
-        ),
-        portal1_id: Appearance(name=AppearanceName.PORTAL),
-        portal2_id: Appearance(name=AppearanceName.PORTAL),
+        entity_id: Appearance(name=("human" if is_agent else "box")),
+        portal1_id: Appearance(name="portal"),
+        portal2_id: Appearance(name="portal"),
     }
     agent = {entity_id: Agent()} if is_agent else {}
     pushable = {entity_id: Pushable()} if not is_agent else {}
@@ -188,8 +185,8 @@ def test_portal_pair_missing_does_not_crash() -> None:
     portal = {portal1_id: Portal(pair_entity=999)}
     collidable = {agent_id: Collidable()}
     appearance = {
-        agent_id: Appearance(name=AppearanceName.HUMAN),
-        portal1_id: Appearance(name=AppearanceName.PORTAL),
+        agent_id: Appearance(name="human"),
+        portal1_id: Appearance(name="portal"),
     }
     state: State = State(
         width=5,
@@ -234,10 +231,10 @@ def test_multiple_entities_on_portal_all_blocked() -> None:
     }
     collidable = {agent_id: Collidable(), pushable_id: Collidable()}
     appearance = {
-        agent_id: Appearance(name=AppearanceName.HUMAN),
-        pushable_id: Appearance(name=AppearanceName.BOX),
-        portal1_id: Appearance(name=AppearanceName.PORTAL),
-        portal2_id: Appearance(name=AppearanceName.PORTAL),
+        agent_id: Appearance(name="human"),
+        pushable_id: Appearance(name="box"),
+        portal1_id: Appearance(name="portal"),
+        portal2_id: Appearance(name="portal"),
     }
     state = State(
         width=10,
@@ -262,7 +259,6 @@ def test_entity_chained_portals_no_infinite_teleport() -> None:
         Collidable,
         Portal,
         Appearance,
-        AppearanceName,
         Agent,
     )
 
@@ -294,10 +290,10 @@ def test_entity_chained_portals_no_infinite_teleport() -> None:
     }
     collidable = {agent_id: Collidable()}
     appearance = {
-        agent_id: Appearance(name=AppearanceName.HUMAN),
-        portal_a: Appearance(name=AppearanceName.PORTAL),
-        portal_b: Appearance(name=AppearanceName.PORTAL),
-        portal_c: Appearance(name=AppearanceName.PORTAL),
+        agent_id: Appearance(name="human"),
+        portal_a: Appearance(name="portal"),
+        portal_b: Appearance(name="portal"),
+        portal_c: Appearance(name="portal"),
     }
     state: State = State(
         width=10,

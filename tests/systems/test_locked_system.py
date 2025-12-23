@@ -14,7 +14,6 @@ from grid_universe.components import (
     Blocking,
     Collidable,
     Appearance,
-    AppearanceName,
 )
 from grid_universe.entity import new_entity_id
 
@@ -75,9 +74,9 @@ def make_minimal_key_door_state() -> tuple[State, dict]:
     blocking[door_id] = Blocking()
     collidable[agent_id] = Collidable()
     collidable[door_id] = Collidable()
-    appearance[agent_id] = Appearance(name=AppearanceName.HUMAN)
-    appearance[key_id] = Appearance(name=AppearanceName.KEY)
-    appearance[door_id] = Appearance(name=AppearanceName.DOOR)
+    appearance[agent_id] = Appearance(name="human")
+    appearance[key_id] = Appearance(name="key")
+    appearance[door_id] = Appearance(name="door")
 
     state = State(
         width=3,

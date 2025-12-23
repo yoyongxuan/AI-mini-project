@@ -12,7 +12,6 @@ from grid_universe.components import (
     Dead,
     Position,
     Appearance,
-    AppearanceName,
 )
 from grid_universe.systems.tile import tile_reward_system, tile_cost_system
 from grid_universe.types import EntityID
@@ -35,9 +34,7 @@ def make_tile_state(
     cost_map: Dict[EntityID, Cost] = {}
     collectible_map: Dict[EntityID, Collectible] = {}
     inventory: Dict[EntityID, Inventory] = {agent_id: Inventory(pset())}
-    appearance: Dict[EntityID, Appearance] = {
-        agent_id: Appearance(name=AppearanceName.HUMAN)
-    }
+    appearance: Dict[EntityID, Appearance] = {agent_id: Appearance(name="human")}
     dead: PMap[EntityID, Dead] = pmap({agent_id: Dead()}) if agent_dead else pmap()
 
     rewardable_ids = rewardable_ids or []
@@ -47,15 +44,15 @@ def make_tile_state(
     for rid in rewardable_ids:
         pos[rid] = Position(*agent_pos)
         reward_map[rid] = Rewardable(amount=reward_amount)
-        appearance[rid] = Appearance(name=AppearanceName.COIN)
+        appearance[rid] = Appearance(name="coin")
     for cid in cost_ids:
         pos[cid] = Position(*agent_pos)
         cost_map[cid] = Cost(amount=cost_amount)
-        appearance[cid] = Appearance(name=AppearanceName.COIN)
+        appearance[cid] = Appearance(name="coin")
     for colid in collectible_ids:
         pos[colid] = Position(*agent_pos)
         collectible_map[colid] = Collectible()
-        appearance[colid] = Appearance(name=AppearanceName.CORE)
+        appearance[colid] = Appearance(name="core")
 
     state: State = State(
         width=3,
@@ -192,10 +189,10 @@ def test_multiple_agents_separate_scores() -> None:
     cost = {4: Cost(amount=7)}
     inventory = {agent1_id: Inventory(pset()), agent2_id: Inventory(pset())}
     appearance: Dict[EntityID, Appearance] = {
-        agent1_id: Appearance(name=AppearanceName.HUMAN),
-        agent2_id: Appearance(name=AppearanceName.HUMAN),
-        3: Appearance(name=AppearanceName.COIN),
-        4: Appearance(name=AppearanceName.COIN),
+        agent1_id: Appearance(name="human"),
+        agent2_id: Appearance(name="human"),
+        3: Appearance(name="coin"),
+        4: Appearance(name="coin"),
     }
     state = State(
         width=2,

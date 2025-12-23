@@ -317,7 +317,7 @@ Guidelines:
 
 ## Rendering & Assets
 
-Texture selection key: `(AppearanceName, tuple(sorted(properties))) → path|directory`.
+Texture selection key: `(appearance_name, tuple(sorted(properties))) → path|directory`.
 
 If value is a directory, a deterministic file is chosen from it (seed + turn) so runs are stable.
 

@@ -13,7 +13,6 @@ from grid_universe.components import (
     LethalDamage,
     Dead,
     Appearance,
-    AppearanceName,
     Collidable,
     Immunity,
     Status,
@@ -42,9 +41,7 @@ def build_agent_with_sources(
     health: Dict[EntityID, Health] = {
         agent_id: Health(health=agent_health, max_health=agent_health)
     }
-    appearance: Dict[EntityID, Appearance] = {
-        agent_id: Appearance(name=AppearanceName.HUMAN)
-    }
+    appearance: Dict[EntityID, Appearance] = {agent_id: Appearance(name="human")}
     collidable: Dict[EntityID, Collidable] = {agent_id: Collidable()}
     immunity: Dict[EntityID, Immunity] = {}
     damage_map: Dict[EntityID, Damage] = {}
@@ -63,7 +60,7 @@ def build_agent_with_sources(
         src_id: EntityID = 2 + i
         pos_tuple: Tuple[int, int] = src.get("pos", agent_pos)  # type: ignore
         position[src_id] = Position(*pos_tuple)
-        appearance[src_id] = Appearance(name=src.get("appearance", AppearanceName.LAVA))  # type: ignore
+        appearance[src_id] = Appearance(name=src.get("appearance", "lava"))  # type: ignore
         collidable[src_id] = Collidable()
         if "damage" in src and src["damage"] is not None:
             damage_map[src_id] = Damage(amount=int(src["damage"]))  # type: ignore
@@ -244,9 +241,9 @@ def test_multiple_agents_each_take_appropriate_damage() -> None:
         agent2: Health(health=10, max_health=10),
     }
     appearance: Dict[EntityID, Appearance] = {
-        agent1: Appearance(name=AppearanceName.HUMAN),
-        agent2: Appearance(name=AppearanceName.HUMAN),
-        3: Appearance(name=AppearanceName.LAVA),
+        agent1: Appearance(name="human"),
+        agent2: Appearance(name="human"),
+        3: Appearance(name="lava"),
     }
     collidable: Dict[EntityID, Collidable] = {
         agent1: Collidable(),
@@ -292,9 +289,7 @@ def test_damage_and_unrelated_components_do_not_interfere() -> None:
         state,
         position=state.position.set(unrelated_id, Position(0, 0)),
         rewardable=state.rewardable.set(unrelated_id, object()),  # type: ignore
-        appearance=state.appearance.set(
-            unrelated_id, Appearance(name=AppearanceName.COIN)
-        ),
+        appearance=state.appearance.set(unrelated_id, Appearance(name="coin")),
     )
     state2: State = damage_system(state)
     assert_health(state2, agent_id, 6)

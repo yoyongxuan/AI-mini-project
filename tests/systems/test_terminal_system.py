@@ -12,7 +12,6 @@ from grid_universe.components import (
     Dead,
     Position,
     Appearance,
-    AppearanceName,
 )
 from grid_universe.state import State
 from grid_universe.types import EntityID
@@ -31,8 +30,8 @@ def make_terminal_state(
     requirable: Dict[EntityID, Requirable] = {}
     collectible: Dict[EntityID, Collectible] = {}
     appearance: Dict[EntityID, Appearance] = {
-        agent_id: Appearance(name=AppearanceName.HUMAN),
-        exit_id: Appearance(name=AppearanceName.EXIT),
+        agent_id: Appearance(name="human"),
+        exit_id: Appearance(name="exit"),
     }
     dead: PMap[EntityID, Dead] = pmap({agent_id: Dead()}) if agent_dead else pmap()
 
@@ -45,7 +44,7 @@ def make_terminal_state(
         requirable[rid] = Requirable()
         if not all_required_collected:
             collectible[rid] = Collectible()
-            appearance[rid] = Appearance(name=AppearanceName.CORE)
+            appearance[rid] = Appearance(name="core")
             pos[rid] = Position(5 + i, 5)
         else:
             # Collected: add to inventory, not to collectible

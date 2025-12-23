@@ -19,7 +19,7 @@ from grid_universe.levels.factories import (
     create_floor,
     create_speed_effect,
 )
-from grid_universe.components.properties import PathfindingType, AppearanceName
+from grid_universe.components.properties import PathfindingType
 
 
 # ---------- Helpers: Canonicalization ----------
@@ -248,7 +248,7 @@ def test_level_roundtrip_lossless() -> None:
                 if (
                     obj.damage is not None
                     and obj.appearance
-                    and obj.appearance.name == AppearanceName.MONSTER
+                    and obj.appearance.name == "monster"
                 ):
                     monster_obj = obj
                 if obj.portal is not None:

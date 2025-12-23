@@ -8,7 +8,7 @@ from .effects import Speed
 
 # Properties
 from .properties import Agent
-from .properties import Appearance, AppearanceName
+from .properties import Appearance
 from .properties import Blocking
 from .properties import Collectible
 from .properties import Collidable
@@ -41,7 +41,6 @@ __all__ = [
     # Properties
     "Agent",
     "Appearance",
-    "AppearanceName",
     "Blocking",
     "Collectible",
     "Collidable",

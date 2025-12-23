@@ -9,22 +9,22 @@ from grid_universe.components.effects import (
     UsageLimit,
 )
 from keyup import keyup
-from grid_universe.components import AppearanceName, Status, Inventory
+from grid_universe.components import Status, Inventory
 from grid_universe.gym_env import GridUniverseEnv, Action
 from grid_universe.state import State
 from grid_universe.types import EffectLimit, EffectLimitAmount, EffectType, EntityID
 
 
-ITEM_ICONS: Dict[AppearanceName, str] = {
-    AppearanceName.KEY: "🔑",
-    AppearanceName.COIN: "🪙",
-    AppearanceName.CORE: "🌟",
+ITEM_ICONS: Dict[str, str] = {
+    "key": "🔑",
+    "coin": "🪙",
+    "core": "🌟",
 }
 
-POWERUP_ICONS: Dict[AppearanceName, str] = {
-    AppearanceName.GHOST: "👻",
-    AppearanceName.SHIELD: "🛡️",
-    AppearanceName.BOOTS: "⚡",
+POWERUP_ICONS: Dict[str, str] = {
+    "ghost": "👻",
+    "shield": "🛡️",
+    "boots": "⚡",
 }
 
 

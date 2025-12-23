@@ -9,7 +9,6 @@ from grid_universe.components import (
     Position,
     Inventory,
     Appearance,
-    AppearanceName,
     Immunity,
     Speed,
     Phasing,
@@ -51,7 +50,7 @@ def build_agent_with_effects(
         agent_id = new_entity_id()
     agent[agent_id] = Agent()
     inventory[agent_id] = Inventory(pset())
-    appearance[agent_id] = Appearance(name=AppearanceName.HUMAN)
+    appearance[agent_id] = Appearance(name="human")
     effects = effects or []
 
     for eff in effects:
@@ -282,7 +281,7 @@ def test_status_cleanup_for_missing_effect() -> None:
         position=pmap({agent_id: Position(0, 0)}),
         agent=pmap({agent_id: Agent()}),
         status=pmap({agent_id: Status(effect_ids=pset([ghost_effect]))}),
-        appearance=pmap({agent_id: Appearance(name=AppearanceName.HUMAN)}),
+        appearance=pmap({agent_id: Appearance(name="human")}),
     )
     state2 = status_system(state)
     assert not state2.status[agent_id].effect_ids
