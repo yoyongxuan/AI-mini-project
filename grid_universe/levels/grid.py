@@ -5,7 +5,7 @@ mutable representation of a `grid_universe.state.State`. It provides a
 simple grid editing API (add/remove/move) and stores the configuration needed
 to build a runtime state.
 
-Use `grid_universe.levels.factories` to create `grid_universe.levels.entity.Entity`
+Use `grid_universe.levels.factories` to create `grid_universe.levels.entity.BaseEntity`
 objects conveniently, and `grid_universe.levels.convert` to convert between
 this representation and the immutable runtime `grid_universe.state.State`.
 """
@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from typing import Callable, List, Optional, Tuple
 
 from grid_universe.types import MoveFn, ObjectiveFn
-from .entity import Entity
+from .entity import BaseEntity
 
 # Grid coordinate alias (x, y)
 Position = Tuple[int, int]
@@ -27,7 +27,7 @@ class Level:
     """
     Grid-centric, mutable level representation.
 
-    - ``grid[y][x]`` is a list of `grid_universe.levels.entity.Entity` instances at that cell.
+    - ``grid[y][x]`` is a list of `grid_universe.levels.entity.BaseEntity` instances at that cell.
     - The level stores configuration such as ``move_fn``, ``objective_fn``, ``seed``, and simple
         meta (turn/score/etc.).
     - Use `grid_universe.levels.convert.to_state` / `grid_universe.levels.convert.from_state`
@@ -41,7 +41,7 @@ class Level:
     seed: Optional[int] = None
 
     # 2D array of cells: each cell holds a list of EntityObject
-    grid: List[List[List[Entity]]] = field(init=False)
+    grid: List[List[List[BaseEntity]]] = field(init=False)
 
     # Optional meta (carried through conversion)
     turn: int = 0
@@ -57,22 +57,22 @@ class Level:
 
     # -------- Grid editing API --------
 
-    def add(self, pos: Position, obj: Entity) -> None:
+    def add(self, pos: Position, obj: BaseEntity) -> None:
         """
-        Place an `grid_universe.levels.entity.Entity` into the cell at pos (x, y).
+        Place an `grid_universe.levels.entity.BaseEntity` into the cell at pos (x, y).
         """
         x, y = pos
         self._check_bounds(x, y)
         self.grid[y][x].append(obj)
 
-    def add_many(self, items: List[Tuple[Position, Entity]]) -> None:
+    def add_many(self, items: List[Tuple[Position, BaseEntity]]) -> None:
         """
         Place multiple entities. Each entry is ``(pos, obj)``.
         """
         for pos, obj in items:
             self.add(pos, obj)
 
-    def remove(self, pos: Position, obj: Entity) -> bool:
+    def remove(self, pos: Position, obj: BaseEntity) -> bool:
         """
         Remove a specific entity (by identity) from the cell at pos.
         Returns True if the object was found and removed, False otherwise.
@@ -86,7 +86,7 @@ class Level:
                 return True
         return False
 
-    def remove_if(self, pos: Position, predicate: Callable[[Entity], bool]) -> int:
+    def remove_if(self, pos: Position, predicate: Callable[[BaseEntity], bool]) -> int:
         """
         Remove all objects in the cell at pos for which predicate(obj) is True.
         Returns the number of removed objects.
@@ -99,7 +99,7 @@ class Level:
         self.grid[y][x] = keep
         return removed
 
-    def move_obj(self, from_pos: Position, obj: Entity, to_pos: Position) -> bool:
+    def move_obj(self, from_pos: Position, obj: BaseEntity, to_pos: Position) -> bool:
         """
         Move a specific entity (by identity) from one cell to another.
         Returns True if moved (i.e., it was found in the source cell), False otherwise.
@@ -119,7 +119,7 @@ class Level:
         self.grid[y][x] = []
         return n
 
-    def objects_at(self, pos: Position) -> List[Entity]:
+    def objects_at(self, pos: Position) -> List[BaseEntity]:
         """
         Return a shallow copy of the list of objects at pos.
         """

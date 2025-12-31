@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from grid_universe.levels.grid import Level
 from grid_universe.levels.convert import to_state, from_state
-from grid_universe.levels.entity import Entity, COMPONENT_TO_FIELD
+from grid_universe.levels.entity import Entity, FIELD_TO_COMPONENT
 from grid_universe.levels.factories import (
     create_agent,
     create_coin,
@@ -30,7 +30,7 @@ def _obj_component_signature(obj: Entity) -> Dict[str, Any]:
     Capture an Entity's components (excluding Level-only nested lists/refs) as a dict.
     """
     sig: Dict[str, Any] = {}
-    for _, store_name in COMPONENT_TO_FIELD.items():
+    for store_name, _ in FIELD_TO_COMPONENT.items():
         comp = getattr(obj, store_name, None)
         if comp is not None:
             sig[store_name] = asdict(comp)
@@ -83,7 +83,7 @@ def _state_entity_component_signature(state, eid) -> Dict[str, Any]:
     sig: Dict[str, Any] = {}
 
     # Basic components
-    for _, store_name in COMPONENT_TO_FIELD.items():
+    for store_name, _ in FIELD_TO_COMPONENT.items():
         if store_name in ("inventory", "status", "pathfinding", "portal"):
             continue
         store = getattr(state, store_name)

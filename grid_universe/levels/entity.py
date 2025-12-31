@@ -1,20 +1,17 @@
-"""Mutable entity specification.
-
-The `grid_universe.levels.entity.Entity` dataclass is an alternative,
-mutable representation of an ECS entity in `grid_universe.state.State`.
-
-It stores optional component instances plus additional mutable structure
-(nested inventory/status items and cross-entity references) that can be
-resolved during conversion.
-
-Use `grid_universe.levels.convert` to convert between this representation
-and the immutable runtime `grid_universe.state.State`.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import (
+    Any,
+    Final,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    cast,
+)
 
 from grid_universe.components.properties import (
     Agent,
@@ -47,53 +44,114 @@ from grid_universe.components.effects import (
     UsageLimit,
 )
 
-# Map component class -> State store name (used by convert.py)
-COMPONENT_TO_FIELD: Dict[Type[Any], str] = {
-    Agent: "agent",
-    Appearance: "appearance",
-    Blocking: "blocking",
-    Collectible: "collectible",
-    Collidable: "collidable",
-    Cost: "cost",
-    Damage: "damage",
-    Exit: "exit",
-    Health: "health",
-    Inventory: "inventory",
-    Key: "key",
-    LethalDamage: "lethal_damage",
-    Locked: "locked",
-    Moving: "moving",
-    Pathfinding: "pathfinding",
-    Portal: "portal",
-    Pushable: "pushable",
-    Requirable: "requirable",
-    Rewardable: "rewardable",
-    Status: "status",
-    Immunity: "immunity",
-    Phasing: "phasing",
-    Speed: "speed",
-    TimeLimit: "time_limit",
-    UsageLimit: "usage_limit",
+# ---- Registries ----
+
+ComponentType = Type[Any]
+FieldName = str
+
+FIELD_TO_COMPONENT: Final[Mapping[FieldName, ComponentType]] = {
+    # Properties
+    "agent": Agent,
+    "appearance": Appearance,
+    "blocking": Blocking,
+    "collectible": Collectible,
+    "collidable": Collidable,
+    "cost": Cost,
+    "damage": Damage,
+    "exit": Exit,
+    "health": Health,
+    "inventory": Inventory,
+    "key": Key,
+    "lethal_damage": LethalDamage,
+    "locked": Locked,
+    "moving": Moving,
+    "pathfinding": Pathfinding,
+    "portal": Portal,
+    "pushable": Pushable,
+    "requirable": Requirable,
+    "rewardable": Rewardable,
+    "status": Status,
+    # Effects (these are separate entities but still components)
+    "immunity": Immunity,
+    "phasing": Phasing,
+    "speed": Speed,
+    "time_limit": TimeLimit,
+    "usage_limit": UsageLimit,
 }
 
+REFERENCE_FIELD_TO_COMPONENT: Final[Mapping[FieldName, ComponentType]] = {
+    "pathfind_target_ref": Pathfinding,
+    "pathfinding_type": PathfindingType,
+    "portal_pair_ref": Portal,
+}
 
-def _empty_objs() -> List["Entity"]:
+# Level-only nested lists (contain BaseEntity instances); tuple avoids forward-ref type mismatch
+NESTED_FIELDS: Final[Tuple[FieldName, ...]] = ("inventory_list", "status_list")
+
+
+def _empty_objs() -> List["BaseEntity"]:
     return []
 
 
+# ---- Base classes ----
+
+
 @dataclass
-class Entity:
+class BaseEntity:
     """
-    Mutable bag of ECS components used in `grid_universe.levels.grid.Level`.
-
-    - It omits ``Position`` (position is supplied by the containing grid cell).
-    - It supports extra mutable structure that is resolved during conversion:
-        - wiring refs: ``pathfind_target_ref``, ``pathfinding_type``, ``portal_pair_ref``
-        - nested collections: ``inventory_list`` and ``status_list`` (materialized as
-            separate entities in `grid_universe.levels.convert.to_state`).
+    Minimal base for mutable level entities.
     """
 
-    # Components
+    def __post_init__(self) -> None:
+        validate_entity(self)
+
+    def iter_components(self) -> Iterator[Tuple[FieldName, Any]]:
+        """Yield (store_name, component) for non-None ECS/effect components present on this object."""
+        for name in FIELD_TO_COMPONENT.keys():
+            if hasattr(self, name):
+                value = getattr(self, name)
+                if value is not None:
+                    yield name, value
+
+    def iter_nested_objects(self) -> Iterator[Tuple[FieldName, List["BaseEntity"]]]:
+        """Yield (store_name, list[BaseEntity]) for non-empty nested lists."""
+        for name in NESTED_FIELDS:
+            if hasattr(self, name):
+                lst_any = getattr(self, name, [])
+                if lst_any:
+                    # Cast for type checker; runtime checks are done in validate_entity
+                    lst = cast(List[BaseEntity], lst_any)
+                    yield name, list(lst)
+
+    def iter_reference_fields(self) -> Iterator[Tuple[FieldName, Any]]:
+        """Yield (store_name, ref) for non-None cross-entity references."""
+        for name in REFERENCE_FIELD_TO_COMPONENT.keys():
+            if hasattr(self, name):
+                ref = getattr(self, name)
+                if ref is not None:
+                    yield name, ref
+
+    def __repr__(self) -> str:
+        parts: List[str] = []
+        for k, v in self.iter_components():
+            parts.append(f"{k}={v!r}")
+        for k, v in self.iter_nested_objects():
+            parts.append(f"{k}=[{', '.join(type(x).__name__ for x in v)}]")
+        for k, v in self.iter_reference_fields():
+            parts.append(f"{k}={v!r}")
+        return f"{type(self).__name__}({', '.join(parts)})"
+
+
+@dataclass(repr=False)
+class Entity(BaseEntity):
+    """
+    Generic mutable entity with optional components, nested objects, and references.
+
+    Games may subclass BaseEntity directly for tighter types, while this generic Entity
+    remains a flexible builder-friendly shape.
+    """
+
+    # Components (optional)
     agent: Optional[Agent] = None
     appearance: Optional[Appearance] = None
     blocking: Optional[Blocking] = None
@@ -115,43 +173,108 @@ class Entity:
     rewardable: Optional[Rewardable] = None
     status: Optional[Status] = None
 
-    # Effects
+    # Effects (optional)
     immunity: Optional[Immunity] = None
     phasing: Optional[Phasing] = None
     speed: Optional[Speed] = None
     time_limit: Optional[TimeLimit] = None
     usage_limit: Optional[UsageLimit] = None
 
-    # Level-only nested objects (not State components)
-    inventory_list: List["Entity"] = field(default_factory=_empty_objs)
-    status_list: List["Entity"] = field(default_factory=_empty_objs)
+    # Level-only nested objects (not placed on the grid; materialized during conversion)
+    inventory_list: List["BaseEntity"] = field(default_factory=_empty_objs)
+    status_list: List["BaseEntity"] = field(default_factory=_empty_objs)
 
     # Level-only reference fields (resolved during conversion)
-    pathfind_target_ref: Optional["Entity"] = None
+    pathfind_target_ref: Optional["BaseEntity"] = None
     pathfinding_type: Optional[PathfindingType] = None
-    portal_pair_ref: Optional["Entity"] = None
-
-    def __repr__(self) -> str:
-        """String representation showing non-None components and non-empty nested objects."""
-        components = ", ".join(
-            f"{store_name}={comp!r}" for store_name, comp in self.iter_components()
-        )
-        if self.inventory_list:
-            components += f", inventory_list={self.inventory_list!r}"
-        if self.status_list:
-            components += f", status_list={self.status_list!r}"
-        return f"{self.__class__.__name__}({components})"
-
-    def iter_components(self) -> List[Tuple[str, Any]]:
-        """
-        Yield (store_name, component) for non-None component fields that map to State stores.
-        """
-        out: List[Tuple[str, Any]] = []
-        for _, store_name in COMPONENT_TO_FIELD.items():
-            comp = getattr(self, store_name, None)
-            if comp is not None:
-                out.append((store_name, comp))
-        return out
+    portal_pair_ref: Optional["BaseEntity"] = None
 
 
-__all__ = ["Entity", "COMPONENT_TO_FIELD"]
+# ---- Validation helper ----
+
+
+def validate_entity(obj: BaseEntity) -> None:
+    """
+    Validate component, nested-list, and reference field types.
+    """
+    # Components/effects
+    for name, comp_type in FIELD_TO_COMPONENT.items():
+        if hasattr(obj, name):
+            val = getattr(obj, name)
+            if val is not None and not isinstance(val, comp_type):
+                raise TypeError(
+                    f"Invalid type for '{name}': expected {comp_type.__name__}, got {type(val).__name__}"
+                )
+
+    # Nested lists: must be lists of BaseEntity
+    for list_name in NESTED_FIELDS:
+        if hasattr(obj, list_name):
+            lst_any: Any = getattr(obj, list_name, [])
+            if not isinstance(lst_any, list):
+                raise TypeError(
+                    f"Invalid type for '{list_name}': expected list, got {type(lst_any).__name__}"
+                )
+            for item in lst_any:
+                if not isinstance(item, BaseEntity):
+                    raise TypeError(
+                        f"Invalid nested item in '{list_name}': expected BaseEntity, got {type(item).__name__}"
+                    )
+
+    # References: BaseEntity refs and PathfindingType enum
+    if hasattr(obj, "pathfinding_type"):
+        pft = getattr(obj, "pathfinding_type")
+        if pft is not None and not isinstance(pft, PathfindingType):
+            raise TypeError(
+                f"Invalid type for 'pathfinding_type': expected PathfindingType, got {type(pft).__name__}"
+            )
+    for ref_name in ("pathfind_target_ref", "portal_pair_ref"):
+        if hasattr(obj, ref_name):
+            ref = getattr(obj, ref_name)
+            if ref is not None and not isinstance(ref, BaseEntity):
+                raise TypeError(
+                    f"Invalid type for '{ref_name}': expected BaseEntity, got {type(ref).__name__}"
+                )
+
+
+# ---- Copy utility ----
+
+
+def copy_entity_components(
+    src: BaseEntity,
+    dst: BaseEntity,
+    include_nested: bool = True,
+    include_refs: bool = True,
+) -> BaseEntity:
+    """
+    Copy present fields from src to dst:
+
+      - Components/effects: all keys in FIELD_TO_COMPONENT are copied when present on both src and dst.
+      - Nested lists: fields in NESTED_FIELDS (shallow copies) when include_nested=True and present.
+      - References: fields in REFERENCE_FIELD_TO_COMPONENT when include_refs=True and present.
+
+    Returns:
+      dst (for chaining).
+    """
+    # Components/effects
+    for name in FIELD_TO_COMPONENT.keys():
+        if hasattr(src, name) and hasattr(dst, name):
+            val = getattr(src, name)
+            if val is not None:
+                setattr(dst, name, val)
+
+    # Nested lists
+    if include_nested:
+        for list_name in NESTED_FIELDS:
+            if hasattr(src, list_name) and hasattr(dst, list_name):
+                lst_any = getattr(src, list_name, [])
+                if lst_any:
+                    lst = cast(List[BaseEntity], lst_any)
+                    setattr(dst, list_name, list(lst))
+
+    # References
+    if include_refs:
+        for ref_name in REFERENCE_FIELD_TO_COMPONENT.keys():
+            if hasattr(src, ref_name) and hasattr(dst, ref_name):
+                setattr(dst, ref_name, getattr(src, ref_name, None))
+
+    return dst

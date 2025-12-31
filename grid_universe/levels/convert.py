@@ -1,9 +1,9 @@
-"""Conversion utilities between mutable ``Level``/``Entity`` and runtime ``State``.
+"""Conversion utilities between mutable ``Level`` and runtime ``State``.
 
 Two primary operations:
 
-* ``to_state``: Materialize immutable ECS world from a grid of ``Entity``.
-* ``from_state``: Reconstruct a mutable ``Level``/``Entity`` representation from a runtime state.
+* ``to_state``: Materialize immutable ECS world from a grid of ``BaseEntity``.
+* ``from_state``: Reconstruct a mutable ``Level`` representation from a runtime state.
 
 Handles wiring of portals, pathfinding targets, inventory & status effect
 embedding (nested lists -> separate entities), and assigns deterministic
@@ -13,7 +13,7 @@ EntityIDs.
 from __future__ import annotations
 
 from dataclasses import replace
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from pyrsistent import pmap, pset
 
@@ -28,13 +28,11 @@ from grid_universe.components.properties import (
     Portal,
 )
 from grid_universe.levels.grid import Level, Position
-from grid_universe.levels.entity import Entity, COMPONENT_TO_FIELD
+from grid_universe.levels.entity import BaseEntity, Entity, FIELD_TO_COMPONENT
 
 
 def _init_store_maps() -> Dict[str, Dict[EntityID, Any]]:
-    """
-    Initialize mutable component-store maps mirroring State; converted to pmaps later.
-    """
+    """Initialize mutable component-store maps mirroring State; converted to pmaps later."""
     return {
         # effects
         "immunity": {},
@@ -53,7 +51,7 @@ def _init_store_maps() -> Dict[str, Dict[EntityID, Any]]:
         "dead": {},
         "exit": {},
         "health": {},
-        "inventory": {},  # Inventory component map
+        "inventory": {},
         "key": {},
         "lethal_damage": {},
         "locked": {},
@@ -64,28 +62,20 @@ def _init_store_maps() -> Dict[str, Dict[EntityID, Any]]:
         "pushable": {},
         "requirable": {},
         "rewardable": {},
-        "status": {},  # Status component map
+        "status": {},
     }
 
 
 def _alloc_from_obj(
-    obj: Entity,
+    obj: BaseEntity,
     stores: Dict[str, Dict[EntityID, Any]],
     next_eid_ref: List[int],
     place_pos: Optional[Position] = None,
 ) -> EntityID:
-    """
-    Allocate a new EntityID, create Entity(), copy present components from obj, and optionally set Position.
-
-    - obj: mutable level Entity
-    - stores: store_name -> {eid: component}
-    - next_eid_ref: single-item list acting as a mutable counter
-    - place_pos: (x, y) to create a Position component; None for off-grid entities
-    """
+    """Allocate a new EntityID, copy ECS/effect components from obj, and optionally set Position."""
     eid: EntityID = next_eid_ref[0]
     next_eid_ref[0] += 1
 
-    # Copy ECS components present on the object (includes Inventory/Status if provided)
     for store_name, comp in obj.iter_components():
         stores[store_name][eid] = comp
 
@@ -97,9 +87,7 @@ def _alloc_from_obj(
 
 
 def _build_state(level: Level, stores: Dict[str, Dict[EntityID, Any]]) -> State:
-    """
-    Convert mutable dict stores to pyrsistent maps and construct immutable State.
-    """
+    """Convert mutable dict stores to pyrsistent maps and construct immutable State."""
     return State(
         width=level.width,
         height=level.height,
@@ -149,28 +137,13 @@ def _build_state(level: Level, stores: Dict[str, Dict[EntityID, Any]]) -> State:
 
 
 def to_state(level: Level) -> State:
-    """
-    Convert a Level (grid of Entity objects) into an immutable State.
-
-    Semantics:
-        - Copies all present ECS components from each Entity (including Inventory, Status) onto a new entity id.
-    - Assigns Position for on-grid entities; nested inventory/effect entities have no Position.
-        - Materializes nested lists:
-                * inventory_list: each item Entity becomes a new entity; its id is added to holder's Inventory.item_ids.
-          If holder lacks an Inventory component, an empty one is created.
-                * status_list: each effect Entity becomes a new entity; its id is added to holder's Status.effect_ids.
-          If holder lacks a Status component, an empty one is created.
-    - Wiring:
-        * pathfind_target_ref: if set and the referenced object is placed, sets Pathfinding.target to that eid,
-          creating a Pathfinding component if missing (type defaults to PathfindingType.PATH or uses obj.pathfinding_type).
-        * portal_pair_ref: if set (on-grid for both ends), sets reciprocal Portal.pair_entity.
-    """
+    """Convert a Level (grid of BaseEntity objects) into an immutable State."""
     stores: Dict[str, Dict[EntityID, Any]] = _init_store_maps()
     next_eid_ref: List[int] = [0]
 
     # source object -> eid for on-grid objects
     obj_to_eid: Dict[int, EntityID] = {}
-    placed: List[Tuple[Entity, EntityID]] = []
+    placed: List[Tuple[BaseEntity, EntityID]] = []
 
     for y in range(level.height):
         for x in range(level.width):
@@ -179,38 +152,32 @@ def to_state(level: Level) -> State:
                 obj_to_eid[id(obj)] = eid
                 placed.append((obj, eid))
 
-                # Merge/ensure Inventory from component and/or nested list
-                if obj.inventory_list:
-                    base_inv: Inventory = stores["inventory"].get(
-                        eid,
-                        obj.inventory
-                        if obj.inventory is not None
-                        else Inventory(pset()),
-                    )
+                # Gather nested lists once
+                nested_lists: Dict[str, List[BaseEntity]] = {
+                    name: items for name, items in obj.iter_nested_objects()
+                }
+
+                # Inventory nested items
+                if "inventory_list" in nested_lists:
+                    base_inv = stores["inventory"].get(eid, Inventory(pset()))
                     item_ids: List[EntityID] = [
                         _alloc_from_obj(item, stores, next_eid_ref, place_pos=None)
-                        for item in obj.inventory_list
+                        for item in nested_lists["inventory_list"]
                     ]
                     stores["inventory"][eid] = Inventory(
                         item_ids=base_inv.item_ids.update(item_ids)
                     )
-                elif obj.inventory is not None and eid not in stores["inventory"]:
-                    stores["inventory"][eid] = obj.inventory
 
-                # Merge/ensure Status from component and/or nested list
-                if obj.status_list:
-                    base_status: Status = stores["status"].get(
-                        eid, obj.status if obj.status is not None else Status(pset())
-                    )
+                # Status nested effects
+                if "status_list" in nested_lists:
+                    base_status = stores["status"].get(eid, Status(pset()))
                     eff_ids: List[EntityID] = [
                         _alloc_from_obj(eff, stores, next_eid_ref, place_pos=None)
-                        for eff in obj.status_list
+                        for eff in nested_lists["status_list"]
                     ]
                     stores["status"][eid] = Status(
                         effect_ids=base_status.effect_ids.update(eff_ids)
                     )
-                elif obj.status is not None and eid not in stores["status"]:
-                    stores["status"][eid] = obj.status
 
     # Build immutable State before wiring
     state: State = _build_state(level, stores)
@@ -219,13 +186,15 @@ def to_state(level: Level) -> State:
     sp = state.pathfinding
     pf_changed = False
     for obj, eid in placed:
-        tgt = obj.pathfind_target_ref
-        if tgt is None:
+        tgt_obj = getattr(obj, "pathfind_target_ref", None)
+        if tgt_obj is None:
             continue
-        tgt_eid = obj_to_eid.get(id(tgt))
+        tgt_eid = obj_to_eid.get(id(tgt_obj))
         if tgt_eid is None:
             continue
-        desired_type: PathfindingType = obj.pathfinding_type or PathfindingType.PATH
+        desired_type: PathfindingType = (
+            getattr(obj, "pathfinding_type", None) or PathfindingType.PATH
+        )
         current = sp.get(eid)
         if current is None:
             sp = sp.set(eid, Pathfinding(target=tgt_eid, type=desired_type))
@@ -240,10 +209,10 @@ def to_state(level: Level) -> State:
     spr = state.portal
     portal_changed = False
     for obj, eid in placed:
-        mate = obj.portal_pair_ref
-        if mate is None:
+        mate_obj = getattr(obj, "portal_pair_ref", None)
+        if mate_obj is None:
             continue
-        mate_eid = obj_to_eid.get(id(mate))
+        mate_eid = obj_to_eid.get(id(mate_obj))
         if mate_eid is None:
             continue
         spr = spr.set(eid, Portal(pair_entity=mate_eid))
@@ -256,34 +225,71 @@ def to_state(level: Level) -> State:
 
 
 def _entity_object_from_state(state: State, eid: EntityID) -> Entity:
-    """
-    Reconstruct a mutable level `grid_universe.levels.entity.Entity` from a State entity id.
-
-    Inventory and Status components (if present) are copied. Nested collections
-    (``inventory_list`` / ``status_list``) are initialized empty here.
-    """
+    """Reconstruct a generic mutable level Entity from a State entity id."""
     kwargs: Dict[str, Any] = {}
-    for _, store_name in COMPONENT_TO_FIELD.items():
-        store = getattr(state, store_name)
-        kwargs[store_name] = store.get(eid)
-    # Nested lists start empty; caller may populate from Inventory/Status sets.
-    kwargs["inventory_list"] = []
-    kwargs["status_list"] = []
-    return Entity(**kwargs)
+    for store_name, _ in FIELD_TO_COMPONENT.items():
+        store = getattr(state, store_name, None)
+        if store is not None and eid in store:
+            kwargs[store_name] = store[eid]
+
+    # Rebuild nested lists from Inventory/Status sets
+    if (
+        eid in state.inventory
+        and getattr(state.inventory[eid], "item_ids", None) is not None
+    ):
+        inventory_list: List[Entity] = [
+            _entity_object_from_state(state, item_eid)
+            for item_eid in state.inventory[eid].item_ids
+        ]
+        kwargs["inventory_list"] = inventory_list
+        kwargs["inventory"] = Inventory(pset())
+    else:
+        kwargs["inventory_list"] = []
+
+    if (
+        eid in state.status
+        and getattr(state.status[eid], "effect_ids", None) is not None
+    ):
+        status_list: List[Entity] = [
+            _entity_object_from_state(state, eff_eid)
+            for eff_eid in state.status[eid].effect_ids
+        ]
+        kwargs["status_list"] = status_list
+        kwargs["status"] = Status(pset())
+    else:
+        kwargs["status_list"] = []
+
+    entity = Entity(**kwargs)
+    return entity
+
+
+def _restore_entity_references(
+    state: State,
+    eid: EntityID,
+    entity: Entity,
+    placed_objs: Dict[EntityID, Entity],
+) -> None:
+    """Restore reference fields for a positioned `entity` in-place."""
+    pf = state.pathfinding.get(eid)
+    if pf is not None and pf.target is not None:
+        tgt_obj = placed_objs.get(pf.target)
+        if tgt_obj is not None:
+            entity.pathfind_target_ref = tgt_obj
+            entity.pathfinding_type = pf.type
+        entity.pathfinding = None
+
+    pr = state.portal.get(eid)
+    if pr is not None:
+        mate_obj = placed_objs.get(pr.pair_entity)
+        if mate_obj is not None:
+            entity.portal_pair_ref = mate_obj
+            if mate_obj.portal_pair_ref is None:
+                mate_obj.portal_pair_ref = entity
+        entity.portal = Portal(pair_entity=-1)
 
 
 def from_state(state: State) -> Level:
-    """
-    Convert an immutable State back into a mutable Level (grid of Entity objects).
-
-    Behavior:
-    - Positioned entities are placed into `Level.grid[y][x]` in ascending eid order (deterministic).
-        - Entity components (including Inventory/Status) are reconstructed for positioned entities.
-    - Holder inventory_list/status_list are rebuilt from Inventory.item_ids / Status.effect_ids
-            by reconstructing item/effect entities (not placed on the grid).
-        - Reference fields (pathfind_target_ref, portal_pair_ref) are restored for positioned entities
-            when their targets/pairs are themselves positioned.
-    """
+    """Convert an immutable State back into a mutable Level (grid of generic Entity objects)."""
     level = Level(
         width=state.width,
         height=state.height,
@@ -298,10 +304,8 @@ def from_state(state: State) -> Level:
         message=state.message,
     )
 
-    # eid -> positioned Entity
     placed_objs: Dict[EntityID, Entity] = {}
 
-    # Place entities on the grid
     for eid in sorted(state.position.keys()):
         pos = state.position.get(eid)
         if pos is None:
@@ -313,42 +317,28 @@ def from_state(state: State) -> Level:
         placed_objs[eid] = obj
         level.grid[y][x].append(obj)
 
-    # Rebuild nested lists from Inventory/Status sets
-    for holder_eid, holder_obj in placed_objs.items():
-        inv = state.inventory.get(holder_eid)
-        if inv is not None and getattr(inv, "item_ids", None) is not None:
-            for item_eid in inv.item_ids:
-                holder_obj.inventory_list.append(
-                    _entity_object_from_state(state, item_eid)
-                )
-            holder_obj.inventory = Inventory(pset())
-
-        st = state.status.get(holder_eid)
-        if st is not None and getattr(st, "effect_ids", None) is not None:
-            for eff_eid in st.effect_ids:
-                holder_obj.status_list.append(_entity_object_from_state(state, eff_eid))
-            holder_obj.status = Status(pset())
-
-    # Restore reference fields for positioned entities
     for eid, obj in placed_objs.items():
-        # Pathfinding ref
-        pf = state.pathfinding.get(eid)
-        if pf is not None and pf.target is not None:
-            tgt_obj = placed_objs.get(pf.target)
-            if tgt_obj is not None:
-                obj.pathfind_target_ref = tgt_obj
-                obj.pathfinding_type = pf.type
-            obj.pathfinding = None
-
-        # Portal pair ref (bidirectional)
-        pr = state.portal.get(eid)
-        if pr is not None:
-            mate_obj = placed_objs.get(pr.pair_entity)
-            if mate_obj is not None:
-                obj.portal_pair_ref = mate_obj
-                # Set reciprocal if not already set
-                if mate_obj.portal_pair_ref is None:
-                    mate_obj.portal_pair_ref = obj
-            obj.portal = Portal(pair_entity=-1)
+        _restore_entity_references(state, eid, obj, placed_objs)
 
     return level
+
+
+def level_to_initial_state_fn(level: Level) -> Callable[..., State]:
+    """Create the initial State for the given Level."""
+
+    def initial_state_fn(*args: Any, **kwargs: Any) -> State:
+        return to_state(level)
+
+    return initial_state_fn
+
+
+def level_fn_to_initial_state_fn(
+    level_fn: Callable[..., Level],
+) -> Callable[..., State]:
+    """Convert a level-building function into an initial state function."""
+
+    def initial_state_fn(*args: Any, **kwargs: Any) -> State:
+        level = level_fn(*args, **kwargs)
+        return to_state(level)
+
+    return initial_state_fn

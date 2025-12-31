@@ -1,6 +1,7 @@
-# Include the license and readme
+# Include the license, readme, and type marker
 include LICENSE
 include README.md
+include grid_universe/py.typed
 
 # Include the entire assets directory tree in the source distribution
 recursive-include grid_universe/assets *

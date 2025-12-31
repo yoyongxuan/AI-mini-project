@@ -48,6 +48,7 @@ from grid_universe.utils.image import (
     draw_direction_triangles_on_image,
     recolor_image_keep_tone,
 )
+from grid_universe.utils.ds import HashableDict
 import os
 import random
 
@@ -87,84 +88,90 @@ ObjectProperty = str
 ObjectPropertiesTextureMap = Dict[ObjectName, Dict[Tuple[ObjectProperty, ...], str]]
 
 TexLookupFn = Callable[[ObjectRendering, int], Image.Image]
-TextureMap = Dict[ObjectAsset, str]
+TextureMap = HashableDict[ObjectAsset, str]
 
 
 # --- Built-in Texture Maps ---
 
 
-IMAGEN1_TEXTURE_MAP: TextureMap = {
-    ("human", tuple([])): "imagen1/human",
-    ("human", tuple(["dead"])): "imagen1/sleeping",
-    ("coin", tuple([])): "imagen1/coin",
-    ("core", tuple(["requirable"])): "imagen1/gem",
-    ("box", tuple([])): "imagen1/metalbox",
-    ("box", tuple(["pushable"])): "imagen1/box",
-    ("monster", tuple([])): "imagen1/robot",
-    ("monster", tuple(["pathfinding"])): "imagen1/wolf",
-    ("key", tuple([])): "imagen1/key",
-    ("portal", tuple([])): "imagen1/portal",
-    ("door", tuple(["locked"])): "imagen1/locked",
-    ("door", tuple([])): "imagen1/opened",
-    ("shield", tuple(["immunity"])): "imagen1/shield",
-    ("ghost", tuple(["phasing"])): "imagen1/ghost",
-    ("boots", tuple(["speed"])): "imagen1/boots",
-    ("spike", tuple([])): "imagen1/spike",
-    ("lava", tuple([])): "imagen1/lava",
-    ("exit", tuple([])): "imagen1/exit",
-    ("wall", tuple([])): "imagen1/wall",
-    ("floor", tuple([])): "imagen1/floor",
-}
+IMAGEN1_TEXTURE_MAP: TextureMap = TextureMap(
+    {
+        ("human", tuple([])): "imagen1/human",
+        ("human", tuple(["dead"])): "imagen1/sleeping",
+        ("coin", tuple([])): "imagen1/coin",
+        ("core", tuple(["requirable"])): "imagen1/gem",
+        ("box", tuple([])): "imagen1/metalbox",
+        ("box", tuple(["pushable"])): "imagen1/box",
+        ("monster", tuple([])): "imagen1/robot",
+        ("monster", tuple(["pathfinding"])): "imagen1/wolf",
+        ("key", tuple([])): "imagen1/key",
+        ("portal", tuple([])): "imagen1/portal",
+        ("door", tuple(["locked"])): "imagen1/locked",
+        ("door", tuple([])): "imagen1/opened",
+        ("shield", tuple(["immunity"])): "imagen1/shield",
+        ("ghost", tuple(["phasing"])): "imagen1/ghost",
+        ("boots", tuple(["speed"])): "imagen1/boots",
+        ("spike", tuple([])): "imagen1/spike",
+        ("lava", tuple([])): "imagen1/lava",
+        ("exit", tuple([])): "imagen1/exit",
+        ("wall", tuple([])): "imagen1/wall",
+        ("floor", tuple([])): "imagen1/floor",
+    }
+)
 
 
-KENNEY_TEXTURE_MAP: TextureMap = {
-    (
-        "human",
-        tuple([]),
-    ): "kenney/animated_characters/male_adventurer/maleAdventurer_idle.png",
-    ("human", tuple(["dead"])): "kenney/animated_characters/zombie/zombie_fall.png",
-    ("coin", tuple([])): "kenney/items/coinGold.png",
-    ("core", tuple(["requirable"])): "kenney/items/gold_1.png",
-    ("box", tuple([])): "kenney/tiles/boxCrate.png",
-    ("box", tuple(["pushable"])): "kenney/tiles/boxCrate_double.png",
-    ("monster", tuple([])): "kenney/enemies/slimeBlue.png",
-    ("monster", tuple(["pathfinding"])): "kenney/enemies/slimeBlue_move.png",
-    ("key", tuple([])): "kenney/items/keyRed.png",
-    ("portal", tuple([])): "kenney/items/star.png",
-    ("door", tuple(["locked"])): "kenney/tiles/lockRed.png",
-    ("door", tuple([])): "kenney/tiles/doorClosed_mid.png",
-    ("shield", tuple(["immunity"])): "kenney/items/gemBlue.png",
-    ("ghost", tuple(["phasing"])): "kenney/items/gemGreen.png",
-    ("boots", tuple(["speed"])): "kenney/items/gemRed.png",
-    ("spike", tuple([])): "kenney/tiles/spikes.png",
-    ("lava", tuple([])): "kenney/tiles/lava.png",
-    ("exit", tuple([])): "kenney/tiles/signExit.png",
-    ("wall", tuple([])): "kenney/tiles/brickBrown.png",
-    ("floor", tuple([])): "kenney/tiles/brickGrey.png",
-}
+KENNEY_TEXTURE_MAP: TextureMap = TextureMap(
+    {
+        (
+            "human",
+            tuple([]),
+        ): "kenney/animated_characters/male_adventurer/maleAdventurer_idle.png",
+        ("human", tuple(["dead"])): "kenney/animated_characters/zombie/zombie_fall.png",
+        ("coin", tuple([])): "kenney/items/coinGold.png",
+        ("core", tuple(["requirable"])): "kenney/items/gold_1.png",
+        ("box", tuple([])): "kenney/tiles/boxCrate.png",
+        ("box", tuple(["pushable"])): "kenney/tiles/boxCrate_double.png",
+        ("monster", tuple([])): "kenney/enemies/slimeBlue.png",
+        ("monster", tuple(["pathfinding"])): "kenney/enemies/slimeBlue_move.png",
+        ("key", tuple([])): "kenney/items/keyRed.png",
+        ("portal", tuple([])): "kenney/items/star.png",
+        ("door", tuple(["locked"])): "kenney/tiles/lockRed.png",
+        ("door", tuple([])): "kenney/tiles/doorClosed_mid.png",
+        ("shield", tuple(["immunity"])): "kenney/items/gemBlue.png",
+        ("ghost", tuple(["phasing"])): "kenney/items/gemGreen.png",
+        ("boots", tuple(["speed"])): "kenney/items/gemRed.png",
+        ("spike", tuple([])): "kenney/tiles/spikes.png",
+        ("lava", tuple([])): "kenney/tiles/lava.png",
+        ("exit", tuple([])): "kenney/tiles/signExit.png",
+        ("wall", tuple([])): "kenney/tiles/brickBrown.png",
+        ("floor", tuple([])): "kenney/tiles/brickGrey.png",
+    }
+)
 
-FUTURAMA_TEXTURE_MAP: TextureMap = {
-    ("human", tuple([])): "futurama/character01",
-    ("human", tuple(["dead"])): "futurama/character02",
-    ("coin", tuple([])): "futurama/character03",
-    ("core", tuple(["requirable"])): "futurama/character04",
-    ("box", tuple([])): "futurama/character06",
-    ("box", tuple(["pushable"])): "futurama/character07",
-    ("monster", tuple([])): "futurama/character08",
-    ("monster", tuple(["pathfinding"])): "futurama/character09",
-    ("key", tuple([])): "futurama/character10",
-    ("portal", tuple([])): "futurama/character11",
-    ("door", tuple(["locked"])): "futurama/character12",
-    ("door", tuple([])): "futurama/character13",
-    ("shield", tuple(["immunity"])): "futurama/character14",
-    ("ghost", tuple(["phasing"])): "futurama/character15",
-    ("boots", tuple(["speed"])): "futurama/character16",
-    ("spike", tuple([])): "futurama/character17",
-    ("lava", tuple([])): "futurama/character18",
-    ("exit", tuple([])): "futurama/character19",
-    ("wall", tuple([])): "futurama/character20",
-    ("floor", tuple([])): "futurama/blank.png",
-}
+FUTURAMA_TEXTURE_MAP: TextureMap = TextureMap(
+    {
+        ("human", tuple([])): "futurama/character01",
+        ("human", tuple(["dead"])): "futurama/character02",
+        ("coin", tuple([])): "futurama/character03",
+        ("core", tuple(["requirable"])): "futurama/character04",
+        ("box", tuple([])): "futurama/character06",
+        ("box", tuple(["pushable"])): "futurama/character07",
+        ("monster", tuple([])): "futurama/character08",
+        ("monster", tuple(["pathfinding"])): "futurama/character09",
+        ("key", tuple([])): "futurama/character10",
+        ("portal", tuple([])): "futurama/character11",
+        ("door", tuple(["locked"])): "futurama/character12",
+        ("door", tuple([])): "futurama/character13",
+        ("shield", tuple(["immunity"])): "futurama/character14",
+        ("ghost", tuple(["phasing"])): "futurama/character15",
+        ("boots", tuple(["speed"])): "futurama/character16",
+        ("spike", tuple([])): "futurama/character17",
+        ("lava", tuple([])): "futurama/character18",
+        ("exit", tuple([])): "futurama/character19",
+        ("wall", tuple([])): "futurama/character20",
+        ("floor", tuple([])): "futurama/blank.png",
+    }
+)
 
 DEFAULT_TEXTURE_MAP: TextureMap = IMAGEN1_TEXTURE_MAP
 
@@ -422,6 +429,7 @@ def select_texture_from_directory(
     return os.path.join(dir, chosen)
 
 
+@lru_cache(maxsize=128)
 def validate_appearance_names(state: State, texture_map: TextureMap) -> None:
     """Validate that all appearance names in the state have a corresponding texture.
 
@@ -435,6 +443,19 @@ def validate_appearance_names(state: State, texture_map: TextureMap) -> None:
     missing_names = appearance_names_in_state - appearance_names_in_texture_map
     if missing_names:
         raise ValueError(f"Missing appearance names in texture map: {missing_names}")
+
+
+@lru_cache(maxsize=128)
+def validate_texture_map_files(texture_map: TextureMap, asset_root: str) -> None:
+    """Validate that all texture paths in the texture map exist.
+
+    Raises:
+        FileNotFoundError: If any texture path in the texture map does not exist.
+    """
+    for path in texture_map.values():
+        full_path = os.path.join(asset_root, path)
+        if not os.path.exists(full_path):
+            raise FileNotFoundError(f"Texture path does not exist: {full_path}")
 
 
 def render(
@@ -476,6 +497,7 @@ def render(
         texture_map = DEFAULT_TEXTURE_MAP
 
     validate_appearance_names(state, texture_map)
+    validate_texture_map_files(texture_map, asset_root)
 
     if cache is None:
         cache = {}

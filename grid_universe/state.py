@@ -74,7 +74,7 @@ class State:
         status (PMap[EntityID, Status]): Entity status effect component map.
         prev_position (PMap[EntityID, Position]): Snapshot of positions before movement this step (used by system).
         trail (PMap[Position, PSet[EntityID]]): Mapping of positions to entities that have occupied them (for trail effects).
-        damage_hits (PSet[tuple[EntityID, EntityID, int]]): Set of damage events this turn (attacker, target, amount).
+        damage_hits (PSet[tuple[EntityID, EntityID, int]]): Set of damage events this turn (target, damager, turn).
         turn (int): Current turn number.
         score (int): Cumulative score.
         turn_limit (int | None): Optional maximum number of turns allowed. When

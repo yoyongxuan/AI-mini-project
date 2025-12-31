@@ -340,6 +340,11 @@ class GridUniverseEnv(gym.Env[Union[Observation, Level], np.integer]):
             raise ValueError(
                 f"Unsupported observation_type '{observation_type}'. Expected 'image' or 'level'."
             )
+        if render_mode not in self.metadata["render_modes"]:
+            raise ValueError(
+                f"Unsupported render_mode '{render_mode}'. Expected one of {self.metadata['render_modes']}."
+            )
+
         self._observation_type = observation_type
 
         # Generator/config kwargs for level creation
