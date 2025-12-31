@@ -490,7 +490,10 @@ class GridUniverseEnv(gym.Env[Union[Observation, Level], np.integer]):
             Tuple[Observation, dict]: Observation dict and empty info dict per Gymnasium API.
         """
         self.state = self._initial_state_fn(**self._initial_state_kwargs)
-        self.agent_id = next(iter(self.state.agent.keys()))
+        try:
+            self.agent_id = next(iter(self.state.agent.keys()))
+        except StopIteration:
+            raise ValueError("Generated initial state has no agent defined.")
         if self._observation_type == "image":
             self._setup_renderer()
         obs = self._get_obs()
